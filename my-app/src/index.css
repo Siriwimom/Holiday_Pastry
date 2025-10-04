@@ -66,3 +66,33 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+/* Reset พื้นฐาน */
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;   /* กันเลื่อนแนวนอน + ช่องขวา */
+  background: #fff;     /* เผื่อพื้นหลังดึงเต็มหน้าจอ */
+}
+
+/* ถ้าเคยตั้ง scrollbar-gutter ที่ไหน ล้างค่า */
+html { scrollbar-gutter: auto; } /* หรือแค่ลบ property นี้ออกจากโค้ดคุณ */
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow-x: hidden;     /* กันเลื่อนแนวนอน + รอยแถบขวา */
+  background: #fff;
+}
+
+/* ถ้าเคยตั้ง scrollbar-gutter ที่ไหน ให้ใช้ค่าเริ่มต้น */
+html { scrollbar-gutter: auto; }
+
