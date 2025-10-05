@@ -120,7 +120,7 @@ const LoginPage = () => {
               </Button>
               <Button
                 variant="text"
-                onClick={() => navigate("/ForgetPassword/")}
+                onClick={() => navigate("/ForgetPassword")}
                 sx={{ fontWeight: 700, color: "#0d47a1" }}
               >
                 Forget Password ?

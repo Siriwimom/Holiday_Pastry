@@ -143,6 +143,7 @@ const HomePage = () => {
         <Container maxWidth="lg" sx={{ position: "relative" }}>
           <Typography
             sx={{
+              color:"#ffa000",
               fontSize: { xs: 52, md: 120 },
               lineHeight: 1.05,
               fontWeight: 900,
