@@ -1,7 +1,15 @@
 import React from "react";
 import { Box, TextField, Button, Typography } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 
 const RegisterPage = () => {
+  const navigate = useNavigate();              // ✅ ใช้ hook ภายในคอมโพเนนต์
+
+  const handleLogin = () => {                  // ✅ ย้าย handler มาไว้ในนี้
+    // TODO: ตรวจสอบ email/pw ผ่าน API
+    navigate("/home");                         // ไปหน้า Home
+  };
+
   return (
     <Box
       sx={{
@@ -27,7 +35,9 @@ const RegisterPage = () => {
         <TextField label="Password Confirm" type="password" fullWidth sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "white" } }} />
 
         <Button
+          type="button"                          // ✅ กัน default submit
           fullWidth
+          onClick={handleLogin}
           sx={{
             py: 1.2,
             borderRadius: 999,

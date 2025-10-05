@@ -22,11 +22,14 @@ const LoginPage = () => {
       if (!email || !pw) throw new Error("Please enter email and password.");
       // TODO: call API login ด้วย axios/fetch
       setSbType("success"); setSbMsg("Login success!"); setOpenSb(true);
+      navigate("/home");
       // navigate("/dashboard");
     } catch (e) {
       setSbType("error"); setSbMsg(e.message || "Login failed"); setOpenSb(true);
     }
   };
+  
+
 
   return (
     <Box
@@ -117,7 +120,7 @@ const LoginPage = () => {
               </Button>
               <Button
                 variant="text"
-                onClick={() => navigate("/ForgetPassword/")}
+                onClick={() => navigate("/ForgetPassword")}
                 sx={{ fontWeight: 700, color: "#0d47a1" }}
               >
                 Forget Password ?

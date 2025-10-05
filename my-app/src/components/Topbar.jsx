@@ -17,6 +17,7 @@ const Topbar = () => {
         <Typography
           variant="h3"
           sx={{
+            width: { xs: "100%"},
             fontFamily: "'Kanit','Noto Sans Thai',sans-serif",  // ✅ สำคัญ
             fontWeight: 600,
             letterSpacing: 2,
