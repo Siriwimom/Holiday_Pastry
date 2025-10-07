@@ -1,0 +1,145 @@
+/* Main app layout */
+.app-container {
+  min-height: 100vh;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(180deg, #ffe082 0%, #ffca28 100%);
+  font-family: 'Poppins', 'Inter', sans-serif;
+}
+
+.card {
+  width: 420px;
+  background: linear-gradient(180deg, #ffd34d 0%, #ff9f1c 100%);
+  padding: 40px 30px;
+  border-radius: 16px;
+  color: #0b0b0b;
+  position: relative;
+}
+
+.back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #000;
+}
+
+/* Header */
+.title {
+  text-align: center;
+  color: #fff;
+  font-weight: 800;
+}
+
+/* Profile section */
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-image-container {
+  position: relative;
+}
+
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: #fff;
+  padding: 6px;
+}
+
+.camera-icon {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 50%;
+  padding: 5px;
+}
+
+.edit-profile-text {
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+/* Form section */
+.form-section {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.label {
+  font-weight: 600;
+  margin: 8px 0 4px;
+  color: #333;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+/* Grid for bank info */
+.grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+/* Buttons */
+.button-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.button-row.single {
+  margin-top: 20px;
+}
+
+.button {
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  flex: 1;
+}
+
+/* Bank image */
+.bank-image {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+/* Success message */
+.success-container {
+  text-align: center;
+  padding: 40px;
+}
+
+.success-icon {
+  font-size: 64px;
+}
+
+.success-title {
+  color: #00b257;
+  margin-bottom: 8px;
+}
+
+.success-text {
+  color: #333;
+}
