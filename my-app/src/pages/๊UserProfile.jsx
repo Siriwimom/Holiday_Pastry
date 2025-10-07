@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './UserProfile.css';
 
 export default function UserProfile() {
