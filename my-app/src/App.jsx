@@ -16,16 +16,6 @@ import { CartProvider } from "./state/cart.jsx"; // ✅ นำเข้าให
 export default function App() {
   return (
     <>
-      <GlobalStyles styles={{
-        "*,*::before,*::after": { boxSizing: "border-box" },
-        html: { height: "100%", overflowX: "clip", overflowY: "scroll", scrollbarGutter: "stable" },
-        body: { margin: 0, height: "100%", overflowX: "clip", background: "#fff" },
-        "#root": { height: "100%", overflowX: "clip" },
-        ".MuiRating-visuallyHidden": {
-          position:"absolute", overflow:"hidden", clip:"rect(0 0 0 0)",
-          clipPath:"inset(50%)", width:"1px", height:"1px", margin:"-1px", padding:0, border:0, whiteSpace:"nowrap"
-        },
-      }} />
 
       <CartProvider>
         <BrowserRouter>
@@ -38,7 +28,7 @@ export default function App() {
             <Route path="/search" element={<SearchPage />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/purchases" element={<PurchasesPage />} />  {/* ✅ */}
+            <Route path="/purchases" element={<PurchasesPage />} /> 
             
         
           </Routes>
