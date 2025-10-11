@@ -9,6 +9,7 @@ import { Masonry } from "@mui/lab";
 import Topbar from "../../components/Topbar";
 import { useNavigate } from "react-router-dom";
 
+
 /* ===== โหลดรูปจาก src/assets (recursive + case-insensitive) ===== */
 const assetModules = import.meta.glob("../../assets/**/*.{png,PNG,jpg,JPG,jpeg,JPEG,webp,WEBP}", {
   eager: true,
@@ -25,9 +26,9 @@ const IMAGES = Object.fromEntries(
   })
 );
 
-const BEST = ["BS1","BS2","BS3","BS4","BS5","BS6","BS7","BS8"];
-const CF   = ["CF1","CF2","CF3","CF4","CF5","CF6"];
-const LO   = ["LO1","LO2","LO3"];
+const BEST = ["BS1", "BS2", "BS3", "BS4", "BS5", "BS6", "BS7", "BS8"];
+const CF = ["CF1", "CF2", "CF3", "CF4", "CF5", "CF6"];
+const LO = ["LO1", "LO2", "LO3"];
 
 /* ===== การ์ดรูปพร้อมเอฟเฟกต์ + placeholder เมื่อไม่เจอรูป ===== */
 const ImgCard = ({ imgKey, title, price, ratio = 1 }) => {
@@ -91,6 +92,7 @@ const Section = ({ id, title, children, bg = "transparent", py = { xs: 8, md: 12
 console.log("Loaded assets:", Object.keys(IMAGES));
 
 const HomePage = () => {
+  const navigate = useNavigate();
   return (
     <Box sx={{ minHeight: "100vh", width: "100%", bgcolor: "#fff" }}>
       {/* 1) Topbar */}
@@ -117,11 +119,14 @@ const HomePage = () => {
           <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer" }}>
               <PersonOutlineIcon fontSize="small" />
-              <Typography variant="body2">Account</Typography>
+              <Typography variant="body2" >Account</Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer" }}>
               <ShoppingBagOutlinedIcon fontSize="small" />
-              <Typography variant="body2">Shopping bag</Typography>
+              <Typography onClick={() => navigate("/cart")}>
+                Shopping bag
+              </Typography>
+
             </Box>
           </Box>
         </Container>
@@ -143,7 +148,7 @@ const HomePage = () => {
         <Container maxWidth="lg" sx={{ position: "relative" }}>
           <Typography
             sx={{
-              color:"#ffa000",
+              color: "#ffa000",
               fontSize: { xs: 52, md: 120 },
               lineHeight: 1.05,
               fontWeight: 900,
@@ -153,7 +158,7 @@ const HomePage = () => {
               textShadow: "0 8px 28px rgba(0,0,0,.4)",
             }}
           >
-            Holiday<br/>Pastry
+            Holiday<br />Pastry
           </Typography>
         </Container>
       </Box>
@@ -192,8 +197,8 @@ const HomePage = () => {
                 i === 0
                   ? "span 6"
                   : i === CF.length - 1
-                  ? "span 12"
-                  : "span 3",
+                    ? "span 12"
+                    : "span 3",
             };
             const ratio = i === CF.length - 1 ? 3 : 1.2;
             return (
