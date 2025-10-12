@@ -1,37 +1,49 @@
-import { Router } from "express";
+import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
+const router = express.Router();
 
-const r = Router();
+const toPublicUser = (u) => ({ id: u._id, email: u.email, role: u.role });
 
-// POST /api/auth/register
-r.post("/register", async (req, res) => {
-  const { email, password, name } = req.body;
-  if (!email || !password) return res.status(400).json({ message: "email & password required" });
 
+/// backend/routes/auth.js
+router.post("/register", async (req,res)=>{
+  const { email, password } = req.body;
   const exists = await User.findOne({ email });
-  if (exists) return res.status(409).json({ message: "Email already used" });
+  if (exists) return res.status(400).json({ message: "Email already registered" });
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, name: name || "", passwordHash });
+  const hashed = await bcrypt.hash(password, 10);
+  const user = await User.create({ email, password: hashed, role: "user" });
 
-  const token = jwt.sign({ uid: user._id, email }, process.env.JWT_SECRET, { expiresIn: "7d" });
-  res.json({ token, user: { id: user._id, email: user.email, name: user.name } });
+  const payload = { sub: user._id.toString(), email: user.email, role: user.role };
+  const token = jwt.sign(
+  { id: user._id, email: user.email, role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
+  res.json({ token, user: { id: user._id, email: user.email, role: user.role } });
 });
 
-// POST /api/auth/login
-r.post("/login", async (req, res) => {
+router.post("/login", async (req,res)=>{
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  if (!user) return res.status(401).json({ message: "Invalid credentials" });
+  if (!user) return res.status(400).json({ message: "User not found" });
 
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) return res.status(401).json({ message: "Invalid credentials" });
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return res.status(400).json({ message: "Invalid password" });
 
-  const token = jwt.sign({ uid: user._id, email }, process.env.JWT_SECRET, { expiresIn: "7d" });
-  res.json({ token, user: { id: user._id, email: user.email, name: user.name } });
+  const payload = { sub: user._id.toString(), email: user.email, role: user.role };
+  const token = jwt.sign(
+  { id: user._id, email: user.email, role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: "7d" }
+);
+
+  res.json({ token, user: { id: user._id, email: user.email, role: user.role } });
 });
 
-export default r;
+
+export default router;

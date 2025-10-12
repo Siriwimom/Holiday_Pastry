@@ -3,8 +3,12 @@ import React, { useState } from "react";
 import { Box, TextField, Button, Typography, Snackbar, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { registerApi } from "../../api/auth";
+import { useAuth } from "../../state/auth";
 
 const RegisterPage = () => {
+  
+  const { setUser } = useAuth();
+  const navigate = useNavigate();
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -14,13 +18,11 @@ const RegisterPage = () => {
 
   const handleRegister = async () => {
     try {
-      if (!email || !pw) throw new Error("Please enter email & password");
-      if (pw !== pw2) throw new Error("Passwords do not match");
-      await registerApi({ email, password: pw, name });
-      setSb({ open: true, type: "success", msg: "Register success!" });
-      nav("/home");
-    } catch (e) {
-      setSb({ open: true, type: "error", msg: e.response?.data?.message || e.message || "Register failed" });
+      const u = await registerApi({ email, password: pw });
+      setUser(u);
+      nav("/home");                                    
+    } catch (err) {
+      alert(err.message || "Register failed");
     }
   };
 

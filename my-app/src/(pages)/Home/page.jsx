@@ -8,6 +8,7 @@ import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import { Masonry } from "@mui/lab";
 import Topbar from "../../components/Topbar";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../lib/api";
 
 
 /* ===== โหลดรูปจาก src/assets (recursive + case-insensitive) ===== */
