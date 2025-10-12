@@ -1,22 +1,32 @@
 import { Router } from "express";
-import Product from "../models/Product.js";
+import { auth, requireRole } from "../middleware/auth.js";
 
-const r = Router();
+const router = Router();
+const memory = []; // เปลี่ยนเป็น Mongo model จริงทีหลัง
 
-// GET /api/products
-r.get("/", async (_req, res) => {
-  const items = await Product.find().sort({ createdAt: -1 });
-  res.json(items);
+router.get("/", async (_req, res) => {
+  res.json(memory);
 });
 
-// POST /api/products (seed แบบง่าย ใช้ตอน dev)
-r.post("/seed", async (_req, res) => {
-  await Product.deleteMany({});
-  const docs = await Product.insertMany([
-    { name: "Mayongchid Cheese Pie", price: 690, image: "/images/BS1.jpg", tags: ["best"] },
-    { name: "Christmas Cake", price: 2290, image: "/images/CF1.jpg", tags: ["fav"] }
-  ]);
-  res.json(docs);
+router.post("/", auth, requireRole("admin"), async (req, res) => {
+  const { name, price, category, imageUrl } = req.body;
+  const item = { id: Date.now().toString(), name, price, category, imageUrl };
+  memory.push(item);
+  res.status(201).json(item);
 });
 
-export default r;
+router.put("/:id", auth, requireRole("admin"), async (req, res) => {
+  const idx = memory.findIndex((x) => x.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ message: "Not found" });
+  memory[idx] = { ...memory[idx], ...req.body };
+  res.json(memory[idx]);
+});
+
+router.delete("/:id", auth, requireRole("admin"), async (req, res) => {
+  const idx = memory.findIndex((x) => x.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ message: "Not found" });
+  const [removed] = memory.splice(idx, 1);
+  res.json(removed);
+});
+
+export default router;
