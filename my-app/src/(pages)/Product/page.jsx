@@ -1,119 +1,198 @@
-import React, { useMemo, useState, useEffect } from "react";
+// src/(pages)/Product/page.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Box, Container, Typography, Button, IconButton, Divider, Chip, Rating, ToggleButton, ToggleButtonGroup
+  Box,
+  Container,
+  Typography,
+  Button,
+  IconButton,
+  Divider,
+  Chip,
+  Rating,
+  CircularProgress,
 } from "@mui/material";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { useNavigate, useParams, Link as RouterLink } from "react-router-dom";
+
 import Topbar from "../../components/Topbar";
 import SearchBar from "../../components/SearchBar";
 import Footer from "../../components/Footer";
-import { useCart } from "../../state/cart.jsx";
 
-/* โหลดรูปจาก assets */
-const assetModules = import.meta.glob("../../assets/**/*.{png,PNG,jpg,JPG,jpeg,JPEG,webp,WEBP}", {
-  eager: true,
-  import: "default",
-});
-const IMAGES = Object.fromEntries(
-  Object.entries(assetModules).map(([path, url]) => {
-    const filename = path.split("/").pop();
-    const key = filename.replace(/\.[^.]+$/, "").toUpperCase();
-    return [key, url];
-  })
-);
-const ALL_KEYS = Object.keys(IMAGES);
+import { getProduct, listProducts } from "../../api/products";
+// ถ้ามี cart state แล้วใช้ได้เลย (ไม่มีก็ลบส่วนเกี่ยวกับ useCart ออก)
+import { useCart } from "../../state/cart.jsx";
 
 export default function ProductPage() {
   const navigate = useNavigate();
-  const { key } = useParams();
-  const mainKey = (key || "").toUpperCase();
-  const mainUrl = IMAGES[mainKey];
+  const { id } = useParams();              // รับ _id จาก URL
+  const { add: addToCart } = useCart?.() || { add: null };
 
-  const [active, setActive] = useState(mainUrl);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+  const [prod, setProd] = useState(null);
+  const [related, setRelated] = useState([]);
+  const [activeImg, setActiveImg] = useState("");
   const [rating, setRating] = useState(4);
-  const [base, setBase] = useState("Sponge");        // ✅ choose your cake base
-  const [size, setSize] = useState("6\"");           // ✅ size
-  const price = 2290;                                // demo price
 
-  const { addItem } = useCart();
-
+  // โหลดสินค้า
   useEffect(() => {
-    if (!mainUrl && ALL_KEYS.length) navigate("/home");
-  }, [mainUrl, navigate]);
+    let alive = true;
+    setLoading(true);
+    setErr("");
+    setProd(null);
+    setActiveImg("");
 
-  useEffect(() => setActive(mainUrl), [mainUrl]);
+    (async () => {
+      try {
+        const p = await getProduct(id); // { _id, name, price, category, imageMain, imageSide:[] ... }
+        if (!alive) return;
+        setProd(p);
+        const thumb0 = p.imageMain || p.imageSide?.[0] || "";
+        setActiveImg(thumb0);
 
-  const thumbnails = useMemo(() => {
-    const prefix = mainKey.replace(/\d+$/, "");
-    const group = ALL_KEYS.filter((k) => k.startsWith(prefix));
-    return group.length ? group : ALL_KEYS.slice(0, 6);
-  }, [mainKey]);
+        // โหลดสินค้าที่เกี่ยวข้อง
+        const all = await listProducts();
+        if (!alive) return;
+        const sameCat = (all || []).filter((x) => x.category === p.category && x._id !== p._id).slice(0, 8);
+        setRelated(sameCat);
+      } catch (e) {
+        if (!alive) return;
+        setErr(e?.response?.data || e?.message || "Load product failed");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
 
-  const addToBag = () => {
-    addItem({
-      key: mainKey,
-      name: mainKey.replace(/(\D+)(\d+)/, "$1 $2"),
-      img: mainUrl,
-      price,
-      qty: 1,
-      meta: { base, size },
-    });
+    return () => {
+      alive = false;
+    };
+  }, [id]);
+
+  // รวมรูปสำหรับแกลเลอรี
+  const thumbs = useMemo(() => {
+    if (!prod) return [];
+    const arr = [];
+    if (prod.imageMain) arr.push(prod.imageMain);
+    if (Array.isArray(prod.imageSide)) {
+      for (const u of prod.imageSide) if (u) arr.push(u);
+    }
+    // unique
+    return [...new Set(arr)];
+  }, [prod]);
+
+  const onAddBag = () => {
+    if (!prod) return;
+    if (addToCart) {
+      addToCart({
+        key: prod._id,
+        name: prod.name,
+        price: Number(prod.price) || 0,
+        qty: 1,
+        img: prod.imageMain || thumbs[0] || "",
+        meta: { base: "Classic", size: '6"' }, // ใส่ค่าเริ่มต้นได้ ปรับเองภายหลัง
+      });
+      navigate("/cart");
+    } else {
+      // ถ้าไม่มี useCart ให้แค่นำทางไป /cart เพื่อไม่ให้พัง
+      navigate("/cart");
+    }
   };
 
-  const buyNow = () => {
-    addToBag();
-    navigate("/checkout");
-  };
+  if (loading) {
+    return (
+      <Box sx={{ minHeight: "100vh", bgcolor: "#fffde7", display: "flex", flexDirection: "column" }}>
+        <Topbar />
+        <SearchBar />
+        <Container maxWidth="lg" sx={{ py: 6, display: "flex", justifyContent: "center" }}>
+          <CircularProgress />
+        </Container>
+      </Box>
+    );
+  }
+
+  if (err || !prod) {
+    return (
+      <Box sx={{ minHeight: "100vh", bgcolor: "#fffde7", display: "flex", flexDirection: "column" }}>
+        <Topbar />
+        <SearchBar />
+        <Container maxWidth="lg" sx={{ py: 6 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, mb: 2 }}>
+            Product
+          </Typography>
+          <Typography color="error" sx={{ mb: 2 }}>
+            {err || "Product not found"}
+          </Typography>
+          <Button variant="outlined" onClick={() => navigate(-1)}>
+            Back
+          </Button>
+        </Container>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ width: "100%", minHeight: "100vh", bgcolor: "#fffde7", overflowX: "hidden" }}>
+    <Box sx={{ width: "100%", minHeight: "100vh", bgcolor: "#fffde7", display: "flex", flexDirection: "column", overflowX: "hidden" }}>
       <Topbar />
       <SearchBar />
 
-      <Container maxWidth="xl" sx={{ py: 3 }}>
+      <Container maxWidth="xl" sx={{ flex: 1, py: { xs: 2, md: 4 } }}>
+        {/* Back */}
         <IconButton onClick={() => navigate(-1)} sx={{ mb: 1 }}>
           <ArrowBackIosNewIcon />
         </IconButton>
 
-        {/* layout หลัก */}
+        {/* Grid 3 คอลัมน์ */}
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "120px 1fr 360px" },
-            gap: 2,
+            gap: { xs: 2, md: 3 },
+            gridTemplateColumns: {
+              xs: "1fr",
+              md: "110px 1fr 380px", // ซ้าย thumbs / กลางภาพใหญ่ / ขวา details
+              lg: "120px 1fr 420px",
+            },
             alignItems: "start",
           }}
         >
-          {/* thumbnails */}
-          <Box sx={{ display: "flex", flexDirection: { xs: "row", md: "column" }, gap: 1 }}>
-            {thumbnails.map((k) => (
+          {/* Left thumbnails */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "row", md: "column" },
+              gap: 1,
+              position: "sticky",
+              top: { md: 96 },
+              zIndex: 1,
+            }}
+          >
+            {thumbs.map((u) => (
               <Box
-                key={k}
-                onClick={() => setActive(IMAGES[k])}
+                key={u}
+                onClick={() => setActiveImg(u)}
                 sx={{
-                  width: 80,
-                  height: 80,
+                  width: { xs: 64, md: 88 },
+                  height: { xs: 64, md: 88 },
                   borderRadius: 1,
-                  backgroundImage: `url(${IMAGES[k]})`,
+                  cursor: "pointer",
+                  backgroundImage: `url(${u})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
-                  outline: active === IMAGES[k] ? "2px solid #ffa000" : "1px solid #ccc",
-                  cursor: "pointer",
+                  outline: activeImg === u ? "2px solid #ffa000" : "1px solid rgba(0,0,0,.15)",
                 }}
-                title={k}
+                title="thumbnail"
               />
             ))}
           </Box>
 
-          {/* main image + ราคา */}
+          {/* Middle: Main image + ราคา */}
           <Box>
             <Box
               sx={{
                 width: "100%",
-                aspectRatio: "1/1",
-                backgroundImage: `url(${active})`,
+                aspectRatio: "1 / 1",
+                backgroundImage: `url(${activeImg || thumbs[0] || ""})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 borderRadius: 2,
@@ -121,64 +200,59 @@ export default function ProductPage() {
               }}
             />
             <Typography sx={{ mt: 2, fontWeight: 700, fontSize: 22 }}>
-              {price.toLocaleString()} BATH
+              {Number(prod.price).toLocaleString()} ฿
             </Typography>
           </Box>
 
-          {/* detail panel */}
-          <Box sx={{ p: { xs: 0, md: 1 } }}>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>
-              {mainKey.replace(/(\D+)(\d+)/, "$1 $2")}
+          {/* Right: Detail */}
+          <Box
+            sx={{
+              p: { xs: 0, md: 1 },
+              position: { md: "sticky" },
+              top: { md: 96 },
+            }}
+          >
+            <Typography variant="h5" sx={{ fontWeight: 800, mb: 1 }}>
+              {prod.name}
             </Typography>
+
             <Typography sx={{ color: "text.secondary", mb: 2 }}>
-              Choose your flavor
+              {prod.description || "Choose your flavor"}
             </Typography>
 
-            {/* ✅ Choose your cake base */}
-            <Typography sx={{ fontWeight: 700, mb: 0.5 }}>Choose your cake base</Typography>
-            <ToggleButtonGroup
-              color="warning"
-              value={base}
-              exclusive
-              onChange={(_, v) => v && setBase(v)}
-              sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
-            >
-              {["Sponge", "Chocolate", "Vanilla"].map((b) => (
-                <ToggleButton key={b} value={b} sx={{ borderRadius: 2 }}>
-                  {b}
-                </ToggleButton>
+            {/* ตัวเลือกสี/ท็อปปิ้ง (ตกแต่ง) */}
+            <Box sx={{ display: "flex", gap: 1.5, mb: 2 }}>
+              {["#7a3f00", "#ffd700", "#d4af37", "#fff"].map((c, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    width: 22,
+                    height: 22,
+                    bgcolor: c,
+                    borderRadius: "50%",
+                    border: "1px solid #999",
+                  }}
+                />
               ))}
-            </ToggleButtonGroup>
-
-            {/* ✅ Size */}
-            <Typography sx={{ fontWeight: 700, mb: 0.5 }}>Size</Typography>
-            <ToggleButtonGroup
-              color="warning"
-              value={size}
-              exclusive
-              onChange={(_, v) => v && setSize(v)}
-              sx={{ mb: 2, flexWrap: "wrap", gap: 1 }}
-            >
-              {['6"', '8"', '10"'].map((s) => (
-                <ToggleButton key={s} value={s} sx={{ borderRadius: 2 }}>
-                  {s}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
+            </Box>
 
             <Button
               fullWidth
               variant="contained"
-              startIcon={<ShoppingBagOutlinedIcon />}
-              onClick={addToBag}
               sx={{ bgcolor: "#ffa000", "&:hover": { bgcolor: "#ffb300" }, mb: 1 }}
+              onClick={() => alert("BUY NOW clicked")}
             >
-              ADD YOUR BAG
+              BUY NOW
             </Button>
 
-            {/* ✅ Payment / Buy now */}
-            <Button fullWidth variant="outlined" onClick={buyNow} sx={{ mb: 1, borderWidth: 2 }}>
-              Payment
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<ShoppingBagOutlinedIcon />}
+              sx={{ mb: 1, borderWidth: 2 }}
+              onClick={onAddBag}
+            >
+              ADD YOUR BAG
             </Button>
 
             <IconButton aria-label="wishlist" sx={{ mb: 2 }}>
@@ -192,60 +266,70 @@ export default function ProductPage() {
               <Chip label="Best seller" color="warning" variant="outlined" />
               <Chip label="Pickup available" variant="outlined" />
             </Box>
+
             <Typography sx={{ color: "text.secondary" }}>
               Handcrafted pastry with seasonal ingredients. Perfect for celebrations and gifts.
             </Typography>
           </Box>
         </Box>
 
-        {/* ✅ Product Review */}
-        <Box sx={{ mt: 5 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800 }}>
+        {/* Product Review */}
+        <Box sx={{ mt: { xs: 4, md: 6 } }}>
+          <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
             Product Review
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
             <Rating value={rating} onChange={(_, v) => setRating(v)} />
             <Typography sx={{ color: "text.secondary" }}>{rating}.0 / 5</Typography>
           </Box>
+          <Typography sx={{ color: "text.secondary", fontSize: 14 }}>
+            You will be redirected to our Reviews page to complete your review.
+          </Typography>
         </Box>
 
-        {/* ✅ You might also like */}
-        <Box sx={{ mt: 6 }}>
+        {/* You might also like */}
+        <Box sx={{ mt: { xs: 5, md: 6 } }}>
           <Typography variant="h6" sx={{ fontWeight: 800, mb: 2 }}>
             You might also like
           </Typography>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: { xs: "repeat(2,1fr)", md: "repeat(4,1fr)" },
-              gap: 2,
-            }}
-          >
-            {ALL_KEYS.slice(0, 8).map((k) => (
-              <Box
-                key={k}
-                component={RouterLink}
-                to={`/product/${k}`}
-                sx={{ textDecoration: "none", color: "inherit" }}
-              >
+          {related.length === 0 ? (
+            <Typography color="text.secondary">No related items.</Typography>
+          ) : (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "repeat(2,1fr)", md: "repeat(4,1fr)" },
+                gap: 2,
+              }}
+            >
+              {related.map((r) => (
                 <Box
-                  sx={{
-                    width: "100%",
-                    aspectRatio: "1 / 1",
-                    borderRadius: 2,
-                    backgroundImage: `url(${IMAGES[k]})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    boxShadow: "0 6px 16px rgba(0,0,0,.12)",
-                  }}
-                />
-                <Typography sx={{ mt: 1, fontWeight: 600, fontSize: 14, color: "#ffa000" }}>
-                  {k.replace(/(\D+)(\d+)/, "$1 $2")}
-                </Typography>
-                <Typography sx={{ color: "text.secondary", fontSize: 13 }}>1,650 B</Typography>
-              </Box>
-            ))}
-          </Box>
+                  key={r._id}
+                  component={RouterLink}
+                  to={`/product/${r._id}`}
+                  sx={{ textDecoration: "none", color: "inherit" }}
+                >
+                  <Box
+                    sx={{
+                      width: "100%",
+                      aspectRatio: "1 / 1",
+                      borderRadius: 2,
+                      backgroundImage: `url(${r.imageMain || r.imageSide?.[0] || ""})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      boxShadow: "0 6px 16px rgba(0,0,0,.12)",
+                    }}
+                  />
+                  <Typography sx={{ mt: 1, fontWeight: 600, fontSize: 14, color: "#ffa000" }}>
+                    {r.name}
+                  </Typography>
+                  <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
+                    {Number(r.price).toLocaleString()} ฿
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          )}
         </Box>
       </Container>
 
