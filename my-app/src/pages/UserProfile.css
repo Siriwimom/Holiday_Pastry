@@ -1,13 +1,4 @@
-/* Main app layout */
-.app-container {
-  min-height: 100vh;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(180deg, #ffe082 0%, #ffca28 100%);
-  font-family: 'Poppins', 'Inter', sans-serif;
-}
+/* คลาสนี้ไม่จำเป็นต้องใช้อีกต่อไป เพราะ body จัดการให้แล้ว */
 
 .card {
   width: 420px;
@@ -16,6 +7,7 @@
   border-radius: 16px;
   color: #0b0b0b;
   position: relative;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .back-button {
