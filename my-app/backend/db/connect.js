@@ -1,13 +1,9 @@
+// backend/db/connect.js
 import mongoose from "mongoose";
 
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGO_URI);
-    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
-  } catch (error) {
-    console.error(`❌ Error: ${error.message}`);
-    process.exit(1);
-  }
-};
-
-export default connectDB;
+export default async function connectDB(uri) {
+  if (!uri) throw new Error("MONGO_URI missing");
+  await mongoose.connect(uri, { dbName: process.env.DB_NAME || "holiday_pastry" });
+  console.log("MongoDB connected");
+}
+  

@@ -1,25 +1,26 @@
 // src/(pages)/Home/page.jsx
 import React, { useEffect, useState, useMemo } from "react";
+import SearchBar from "../../components/SearchBar";
 import {
   Box,
   Container,
   Typography,
-  TextField,
-  InputAdornment,
   Link,
   CircularProgress,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import { Masonry } from "@mui/lab";
 import { useNavigate } from "react-router-dom";
 
 import Topbar from "../../components/Topbar";
 import { listProducts } from "../../api/products";
+import { resolveImg } from "../../lib/img"; // <— สำคัญ! ใช้ช่วยแปลงไฟล์เป็น URL backend
 
 /* ---------- Card ที่ใช้ข้อมูลจาก DB ---------- */
 function ImgCardDB({ imgUrl, title, price, onClick, ratio = 1.2 }) {
+  const bg = imgUrl
+    ? `url(${imgUrl})`
+    : "repeating-linear-gradient(45deg,#eee,#eee 10px,#ddd 10px,#ddd 20px)";
+
   return (
     <Box
       onClick={onClick}
@@ -33,9 +34,7 @@ function ImgCardDB({ imgUrl, title, price, onClick, ratio = 1.2 }) {
       <Box
         sx={{
           aspectRatio: `${ratio} / 1`,
-          backgroundImage: imgUrl
-            ? `url(${imgUrl})`
-            : "repeating-linear-gradient(45deg,#eee,#eee 10px,#ddd 10px,#ddd 20px)",
+          backgroundImage: bg,
           backgroundSize: "cover",
           backgroundPosition: "center",
           transition: "transform .5s ease",
@@ -62,7 +61,9 @@ function ImgCardDB({ imgUrl, title, price, onClick, ratio = 1.2 }) {
               </Typography>
             )}
             {price && (
-              <Typography sx={{ opacity: 0.9, fontSize: 13 }}>{price}</Typography>
+              <Typography sx={{ opacity: 0.9, fontSize: 13 }}>
+                {price}
+              </Typography>
             )}
           </Box>
         )}
@@ -103,7 +104,7 @@ export default function HomePage() {
     let alive = true;
     (async () => {
       try {
-        const data = await listProducts(); // [{ _id, name, price, category, imageMain, ...}]
+        const data = await listProducts(); // [{ _id, name, price, category, imageMainUrl?, imageMain? }]
         if (!alive) return;
         setAll(Array.isArray(data) ? data : []);
       } catch (e) {
@@ -116,6 +117,8 @@ export default function HomePage() {
       alive = false;
     };
   }, []);
+
+  const imgSrc = (p) => p?.imageMainUrl || resolveImg(p?.imageMain) || null;
 
   const bs = useMemo(() => all.filter((p) => p.category === "BS"), [all]);
   const cf = useMemo(() => all.filter((p) => p.category === "CF"), [all]);
@@ -133,48 +136,7 @@ export default function HomePage() {
           borderBottom: "1px solid rgba(0,0,0,.08)",
         }}
       >
-        <Container
-          maxWidth="lg"
-          sx={{ py: 1.5, display: "flex", alignItems: "center", gap: 3 }}
-        >
-          <TextField
-            placeholder="Search"
-            size="small"
-            sx={{
-              width: { xs: "100%", sm: 480 },
-              "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "#fff" },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const q = e.currentTarget.value.trim();
-                if (q) nav(`/search?q=${encodeURIComponent(q)}`);
-              }
-            }}
-          />
-          <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 3 }}>
-            <Box
-              sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer" }}
-              onClick={() => nav("/account")}
-            >
-              <PersonOutlineIcon fontSize="small" />
-              <Typography variant="body2">Account</Typography>
-            </Box>
-            <Box
-              sx={{ display: "flex", alignItems: "center", gap: 1, cursor: "pointer" }}
-              onClick={() => nav("/cart")}
-            >
-              <ShoppingBagOutlinedIcon fontSize="small" />
-              <Typography>Shopping bag</Typography>
-            </Box>
-          </Box>
-        </Container>
+        <SearchBar />
       </Box>
 
       {/* HERO */}
@@ -221,11 +183,11 @@ export default function HomePage() {
               {bs.map((p, i) => (
                 <div key={p._id}>
                   <ImgCardDB
-                    imgUrl={p.imageMain}
+                    imgUrl={imgSrc(p)}
                     title={p.name}
-                    price={`${Number(p.price).toLocaleString()} ฿`}
+                    price={p.price != null ? `${Number(p.price).toLocaleString()} ฿` : ""}
                     ratio={[1.2, 1, 1.4, 0.9][i % 4]}
-                    onClick={() => nav(`/product/${p._id}`)} 
+                    onClick={() => nav(`/product/${p._id}`)}
                   />
                 </div>
               ))}
@@ -254,9 +216,9 @@ export default function HomePage() {
               return (
                 <Box key={p._id} sx={{ gridColumn }}>
                   <ImgCardDB
-                    imgUrl={p.imageMain}
+                    imgUrl={imgSrc(p)}
                     title={p.name}
-                    price={`${Number(p.price).toLocaleString()} ฿`}
+                    price={p.price != null ? `${Number(p.price).toLocaleString()} ฿` : ""}
                     ratio={ratio}
                     onClick={() => nav(`/product/${p._id}`)}
                   />
@@ -284,11 +246,11 @@ export default function HomePage() {
               return (
                 <Box key={p._id} sx={{ gridColumn }}>
                   <ImgCardDB
-                    imgUrl={p.imageMain}
+                    imgUrl={imgSrc(p)}
                     title={p.name}
-                    price={`${Number(p.price).toLocaleString()} ฿`}
+                    price={p.price != null ? `${Number(p.price).toLocaleString()} ฿` : ""}
                     ratio={ratio}
-                    onClick={() => nav(`/product/${p._id}`)} 
+                    onClick={() => nav(`/product/${p._id}`)}
                   />
                 </Box>
               );

@@ -1,39 +1,24 @@
 // backend/routes/products.js
 import express from "express";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
 import mongoose from "mongoose";
+import fs from "fs";
+import path from "path";
 import Product from "../models/Product.js";
+import { upload } from "../middlewares/upload.js";
 
 const router = express.Router();
 
-// สร้างโฟลเดอร์ uploads ถ้ายังไม่มี
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-// ตั้งค่า multer (เก็บไฟล์ลง /uploads)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "");
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
-});
-const upload = multer({ storage });
-
-// ---------- LIST ----------
+// GET list
 router.get("/", async (req, res) => {
   try {
     const rows = await Product.find().sort({ createdAt: -1 });
     res.json(rows);
   } catch (e) {
-    console.error("GET /products error:", e);
     res.status(500).json({ message: e.message });
   }
 });
 
-// ---------- GET BY ID ----------
+// GET by id (เหมือนเดิม)
 router.get("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -42,45 +27,78 @@ router.get("/:id", async (req, res) => {
     if (!doc) return res.status(404).send("Not found");
     res.json(doc);
   } catch (e) {
-    console.error("GET /products/:id error:", e);
     res.status(500).json({ message: e.message });
   }
 });
 
-// ---------- CREATE ----------
+// ✅ POST create (รับไฟล์)
 router.post(
   "/",
   upload.fields([
     { name: "imageMain", maxCount: 1 },
-    { name: "imageSide", maxCount: 10 },
+    { name: "imageSide", maxCount: 5 },
   ]),
   async (req, res) => {
     try {
       const { name, price, category, description } = req.body;
 
-      const main = req.files?.imageMain?.[0]
-        ? `/uploads/${req.files.imageMain[0].filename}`
-        : "";
+      const base = process.env.PUBLIC_BASE_URL || "http://localhost:5000";
+      const imageMainUrl = req.file ? `${base}/uploads/${req.file.filename}` : "";
+      const imageSideUrls = (req.files?.imageSide || []).map(f => `${base}/uploads/${f.filename}`);
 
-      const sides = Array.isArray(req.files?.imageSide)
-        ? req.files.imageSide.map((f) => `/uploads/${f.filename}`)
-        : [];
 
       const doc = await Product.create({
         name,
-        price: Number(price) || 0,
+        price,
         category,
-        description: description || "",
-        imageMain: main,
-        imageSide: sides,
+        description,
+        imageMainUrl,
+        imageSideUrls,
       });
 
-      res.status(201).json(doc);
+      res.json(doc);
     } catch (e) {
-      console.error("POST /products error:", e);
+      console.error(e);
       res.status(500).json({ message: e.message });
     }
   }
 );
+
+
+
+// ✅ DELETE (มีอยู่แล้ว ถ้ายังไม่มี ใส่ตัวนี้)
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "invalid id" });
+    }
+
+    const doc = await Product.findByIdAndDelete(id);
+    if (!doc) return res.status(404).json({ message: "not found" });
+
+    // ถ้าคุณเก็บเป็น URL เช่น http://localhost:5000/uploads/xxx.png ก็ลบไฟล์ทิ้งให้
+    const unlinkIfLocal = (url) => {
+      if (!url) return;
+      try {
+        // รองรับทั้ง absolute URL และชื่อไฟล์
+        const filename = url.includes("/uploads/")
+          ? url.split("/uploads/")[1]
+          : url;
+        if (!filename) return;
+        const filePath = path.join(process.cwd(), "uploads", filename);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch { /* เงียบไว้ ไม่ให้ crash */ }
+    };
+
+    unlinkIfLocal(doc.imageMainUrl);
+    (doc.imageSideUrls || []).forEach(unlinkIfLocal);
+
+    return res.json({ ok: true, deletedId: id });
+  } catch (e) {
+    console.error("delete product error:", e);
+    return res.status(500).json({ message: "delete failed" });
+  }
+});
 
 export default router;

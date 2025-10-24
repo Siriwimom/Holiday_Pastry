@@ -1,29 +1,32 @@
-// src/state/auth.jsx
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import jwtDecode from "jwt-decode";              // <-- ใช้ default import
-import { api } from "../lib/api";                // axios instance
+// src/state/auth.js
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 const AuthCtx = createContext(null);
-export const useAuth = () => useContext(AuthCtx);
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);  // <== สำคัญ
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("user")) || null; }
+    catch { return null; }
+  });
+  const [token, setToken] = useState(() => localStorage.getItem("token") || null);
 
-  // รีไฮเดรตจาก localStorage
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        console.log("✅ Decoded JWT:", decoded);
-        setUser(decoded);
-      } catch (err) {
-        console.error("❌ JWT Decode error:", err);
-      }
-    }
-  }, []);
+    if (user) localStorage.setItem("user", JSON.stringify(user));
+    else localStorage.removeItem("user");
+  }, [user]);
 
-  const value = useMemo(() => ({ user, setUser, loading }), [user, loading]);
-  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
+  useEffect(() => {
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+  }, [token]);
+
+  const logout = () => { setUser(null); setToken(null); };
+
+  return (
+    <AuthCtx.Provider value={{ user, setUser, token, setToken, logout }}>
+      {children}
+    </AuthCtx.Provider>
+  );
 }
+
+export const useAuth = () => useContext(AuthCtx);
