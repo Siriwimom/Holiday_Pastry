@@ -1,6 +1,9 @@
 // src/App.jsx
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
+import { AuthProvider } from "./state/auth.jsx";
+import { CartProvider } from "./state/cart.jsx";
 
 import LoginPage from "./(pages)/Login/page.jsx";
 import RegisterPage from "./(pages)/register/page.jsx";
@@ -11,13 +14,14 @@ import SearchPage from "./(pages)/Searchpage/page.jsx";
 import CartPage from "./(pages)/Cart/page.jsx";
 import CheckoutPage from "./(pages)/Checkout/page.jsx";
 import PurchasesPage from "./(pages)/Purchases/page.jsx";
-
-import AdminPage from "./(pages)/Admin_Page/index.jsx";        // ✅ ใช้ชื่อโฟลเดอร์ที่คุณบอก
+import AdminPage from "./(pages)/Admin_Page/page.jsx";
 import ProductAdmin from "./(pages)/Admin_Page/ProductAdmin.jsx";
 
-import { CartProvider } from "./state/cart.jsx";
-import { AuthProvider } from "./state/auth.jsx";
-import RequireAdmin from "./routes/RequireAdmin";              // สมมติว่าคุณมี component นี้แล้ว
+function RequireAdmin({ children }) {
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  if (!user || user.role !== "admin") return <Navigate to="/home" replace />;
+  return children;
+}
 
 export default function App() {
   return (
@@ -25,7 +29,6 @@ export default function App() {
       <CartProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public */}
             <Route path="/" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgetpassword" element={<ResetPasswordPage />} />
@@ -36,31 +39,11 @@ export default function App() {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/purchases" element={<PurchasesPage />} />
 
-            {/* Admin (Protected) */}
-            <Route
-              path="/admin"
-              element={
-                <RequireAdmin>
-                  <AdminPage />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/product/new"
-              element={
-                <RequireAdmin>
-                  <ProductAdmin mode="create" />
-                </RequireAdmin>
-              }
-            />
-            <Route
-              path="/admin/product/:id"
-              element={
-                <RequireAdmin>
-                  <ProductAdmin mode="edit" />
-                </RequireAdmin>
-              }
-            />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/product/new" element={<RequireAdmin><ProductAdmin /></RequireAdmin>} />
+            <Route path="/admin/product/:id" element={<ProductAdmin />} />
+
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </BrowserRouter>
       </CartProvider>

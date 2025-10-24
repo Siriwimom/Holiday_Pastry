@@ -2,50 +2,64 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
 
 dotenv.config();
+
+const app = express();
 app.use(cors());
 app.use(express.json());
-
-// เสิร์ฟไฟล์อัปโหลดกลับให้ frontend
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
-
-// เส้นทาง API
-app.use("/api/products", productsRouter);
-const app = express();
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
-app.use(express.json()); // ใช้กับ application/json เท่านั้น ไม่ชนกับ multer
 
-// static uploads
+// __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// serve uploads (static)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 
-const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI) {
-  console.error("Missing MONGO_URI in .env");
+app.get("/", (_req, res) => res.json({ ok: true }));
+
+// ---- CONNECT & START ----
+const PORT = process.env.PORT || 5000;
+const uri = process.env.MONGO_URI;
+
+if (!uri) {
+  console.error("❌ MONGO_URI is missing in .env");
   process.exit(1);
 }
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => console.log("API running on http://localhost:" + PORT));
-  })
-  .catch((err) => {
-    console.error("Mongo connect error:", err);
+async function start() {
+  try {
+    console.log("⏳ connecting to MongoDB...");
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 15000, // รอได้หน่อย
+      // tls/ssl Atlas ไม่ต้องใส่ option พิเศษทั่วไปใช้ดี
+    });
+
+    console.log("✅ MongoDB connected");
+    app.listen(PORT, () => {
+      console.log(`🚀 server on http://localhost:${PORT}`);
+    });
+
+    mongoose.connection.on("error", err => {
+      console.error("Mongo connection error:", err);
+    });
+  } catch (err) {
+    console.error("❌ MongoDB connect failed:", err.message);
     process.exit(1);
-  });
+  }
+}
+
+start();

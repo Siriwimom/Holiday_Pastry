@@ -1,35 +1,40 @@
 // src/api/products.js
-import { api } from "../lib/api";
+import axios from "axios";
 
-// GET /api/products
+export const api = axios.create({
+  baseURL: "http://localhost:5000/api",
+});
+
+// GET all
 export async function listProducts() {
   const { data } = await api.get("/products");
   return data;
 }
 
-// GET /api/products/:id
+// GET one
 export async function getProduct(id) {
   const { data } = await api.get(`/products/${id}`);
   return data;
 }
 
-// POST /api/products  (multipart/form-data)
-export async function createProduct({ name, price, category, description, imageMain, imageSide }) {
+// POST create (ใช้ FormData ถ้ามีไฟล์)
+export async function createProduct(payload) {
   const fd = new FormData();
-  fd.append("name", name ?? "");
-  fd.append("price", String(price ?? ""));
-  fd.append("category", category ?? "BS");
-  fd.append("description", description ?? "");
+  fd.append("name", payload.name || "");
+  fd.append("price", payload.price ?? "");
+  fd.append("category", payload.category || "BS");
+  fd.append("description", payload.description || "");
 
-  if (imageMain instanceof File) {
-    fd.append("imageMain", imageMain);
+  if (payload.imageMain) fd.append("imageMain", payload.imageMain);
+  if (Array.isArray(payload.imageSide)) {
+    payload.imageSide.forEach((f) => fd.append("imageSide", f));
   }
-  if (Array.isArray(imageSide)) {
-    imageSide.forEach((f) => {
-      if (f instanceof File) fd.append("imageSide", f);
-    });
-  }
+  const { data } = await api.post("/products", fd);
+  return data;
+}
 
-  const { data } = await api.post("/products", fd /* สำคัญ: ห้ามกำหนด headers 'Content-Type' เอง */);
+// DELETE
+export async function deleteProduct(id) {
+  const { data } = await api.delete(`/products/${id}`);
   return data;
 }

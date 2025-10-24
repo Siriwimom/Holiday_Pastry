@@ -1,14 +1,13 @@
-// backend/models/Product.js
 import mongoose from "mongoose";
 
 const ProductSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true },
-    price: { type: Number, required: true, default: 0 },
-    category: { type: String, enum: ["BS", "CF", "LO"], required: true },
-    description: { type: String, default: "" },
-    imageMain: { type: String, default: "" },   // '/uploads/xxx.png'
-    imageSide: { type: [String], default: [] }, // ['/uploads/a.png', '/uploads/b.png']
+    name: String,
+    price: Number,
+    category: String,
+    description: String,
+    imageMainUrl: { type: String, default: "" },
+    imageSideUrls: { type: [String], default: [] },
   },
   { timestamps: true }
 );
