@@ -99,10 +99,12 @@ export default function CheckoutPage() {
           {items.map((it) => (
             <Box key={it.key} sx={{ display: "flex", gap: 1.5, mb: 1.5 }}>
               <img
-                src={it.img}
+                src={it.img || "/placeholder.png"}
                 alt={it.name}
-                style={{ width: 72, height: 72, borderRadius: 10, objectFit: "cover" }}
+                style={{ width: 80, height: 80, borderRadius: 12, objectFit: "cover" }}
+                onError={(e) => (e.currentTarget.src = "/placeholder.png")}
               />
+
               <Box sx={{ flex: 1 }}>
                 <Typography fontWeight={700}>{it.name}</Typography>
                 <Typography sx={{ fontSize: 12 }}>

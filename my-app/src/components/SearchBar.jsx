@@ -1,7 +1,14 @@
-// src/components/SearchBar.jsx
 import React, { useState } from "react";
-import { Box, Container, TextField, InputAdornment, IconButton } from "@mui/material";
+import {
+  Box,
+  Container,
+  TextField,
+  InputAdornment,
+  IconButton,
+} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import ShoppingBagOutlinedIcon from "@mui/icons-material/ShoppingBagOutlined";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export default function SearchBar({ placeholder = "Search" }) {
@@ -17,15 +24,37 @@ export default function SearchBar({ placeholder = "Search" }) {
   };
 
   return (
-    <Box sx={{ background: "linear-gradient(180deg,#ffb300 0%, #ffa000 100%)", borderBottom: "1px solid rgba(0,0,0,.08)" }}>
-      <Container maxWidth="lg" sx={{ py: 1.5, display: "flex", alignItems: "center", gap: 2 }}>
+    <Box
+      sx={{
+        background:
+          "linear-gradient(180deg,#ffb300 0%, #ffa000 100%)",
+        borderBottom: "1px solid rgba(0,0,0,.08)",
+      }}
+    >
+      <Container
+        maxWidth="lg"
+        sx={{
+          py: 1.5,
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+          justifyContent: "space-between",
+        }}
+      >
+        {/* ช่องค้นหา */}
         <TextField
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && doSearch()}
           placeholder={placeholder}
           size="small"
-          sx={{ flex: 1, "& .MuiOutlinedInput-root": { borderRadius: 2, bgcolor: "#fff" } }}
+          sx={{
+            flex: 1,
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              bgcolor: "#fff",
+            },
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -41,6 +70,30 @@ export default function SearchBar({ placeholder = "Search" }) {
             ),
           }}
         />
+
+        {/* ไอคอนขวาสุด */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconButton
+            onClick={() => nav("/account")}
+            sx={{
+              color: "#fff",
+              bgcolor: "rgba(255,255,255,0.25)",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.4)" },
+            }}
+          >
+            <PersonOutlineIcon />
+          </IconButton>
+          <IconButton
+            onClick={() => nav("/cart")}
+            sx={{
+              color: "#fff",
+              bgcolor: "rgba(255,255,255,0.25)",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.4)" },
+            }}
+          >
+            <ShoppingBagOutlinedIcon />
+          </IconButton>
+        </Box>
       </Container>
     </Box>
   );

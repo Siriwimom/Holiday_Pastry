@@ -1,104 +1,119 @@
 // backend/routes/products.js
 import express from "express";
-import mongoose from "mongoose";
-import fs from "fs";
+import multer from "multer";
 import path from "path";
-import Product from "../models/Product.js";
-import { upload } from "../middlewares/upload.js";
+import fs from "fs";
+import Product from "../models/product.js";
 
 const router = express.Router();
 
-// GET list
-router.get("/", async (req, res) => {
-  try {
-    const rows = await Product.find().sort({ createdAt: -1 });
-    res.json(rows);
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-});
+/* ---------- upload dir ---------- */
+const uploadDir = path.join(process.cwd(), "uploads");
+fs.mkdirSync(uploadDir, { recursive: true });
 
-// GET by id (เหมือนเดิม)
-router.get("/:id", async (req, res) => {
+/* ---------- Multer ---------- */
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || "");
+    cb(null, `${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);
+  },
+});
+const upload = multer({ storage });
+
+// รองรับทั้งรูปหลักและรูปด้านข้างหลายไฟล์
+const uploadFields = upload.fields([
+  { name: "imageMain", maxCount: 1 },
+  { name: "imageSide", maxCount: 20 },
+]);
+
+// base URL ที่ใช้ประกอบลิงก์รูป
+const BASE = process.env.PUBLIC_BASE_URL || "http://localhost:5000";
+
+/* ---------- CREATE ---------- */
+router.post("/", uploadFields, async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(404).send("Invalid id");
-    const doc = await Product.findById(id);
-    if (!doc) return res.status(404).send("Not found");
+    const { name = "", price = 0, category = "BS", description = "" } = req.body;
+    const files = req.files || {};
+    const mainFile = files.imageMain?.[0] || null;
+    const sideFiles = files.imageSide || [];
+
+    const imageMainUrl = mainFile
+      ? `${BASE}/uploads/${mainFile.filename}`
+      : (sideFiles[0] ? `${BASE}/uploads/${sideFiles[0].filename}` : "");
+
+    const imageSideUrls = sideFiles.map(f => `${BASE}/uploads/${f.filename}`);
+
+    const doc = await Product.create({
+      name,
+      price: Number(price) || 0,
+      category,
+      description,
+      imageMainUrl,
+      imageSideUrls
+    });
+
     res.json(doc);
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    console.error("create product error:", e);
+    res.status(500).json({ message: "Create failed" });
   }
 });
 
-// ✅ POST create (รับไฟล์)
-router.post(
-  "/",
-  upload.fields([
-    { name: "imageMain", maxCount: 1 },
-    { name: "imageSide", maxCount: 5 },
-  ]),
-  async (req, res) => {
-    try {
-      const { name, price, category, description } = req.body;
 
-      const base = process.env.PUBLIC_BASE_URL || "http://localhost:5000";
-      const imageMainUrl = req.file ? `${base}/uploads/${req.file.filename}` : "";
-      const imageSideUrls = (req.files?.imageSide || []).map(f => `${base}/uploads/${f.filename}`);
-
-
-      const doc = await Product.create({
-        name,
-        price,
-        category,
-        description,
-        imageMainUrl,
-        imageSideUrls,
-      });
-
-      res.json(doc);
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ message: e.message });
-    }
-  }
-);
-
-
-
-// ✅ DELETE (มีอยู่แล้ว ถ้ายังไม่มี ใส่ตัวนี้)
-router.delete("/:id", async (req, res) => {
+/* ---------- UPDATE ---------- */
+router.put("/:id", uploadFields, async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.isValidObjectId(id)) {
-      return res.status(400).json({ message: "invalid id" });
+    const p = await Product.findById(req.params.id);
+    if (!p) return res.status(404).json({ message: "Not found" });
+
+    const { name, price, category, description } = req.body;
+    if (name != null) p.name = name;
+    if (price != null) p.price = Number(price) || 0;
+    if (category != null) p.category = category;
+    if (description != null) p.description = description;
+
+    const files = req.files || {};
+    const mainFile = files.imageMain?.[0] || null;
+    const sideFiles = files.imageSide || [];
+
+    if (mainFile) {
+      p.imageMainUrl = `${BASE}/uploads/${mainFile.filename}`;
+    }
+    if (sideFiles.length) {
+      p.imageSideUrls.push(...sideFiles.map(f => `${BASE}/uploads/${f.filename}`));
     }
 
-    const doc = await Product.findByIdAndDelete(id);
-    if (!doc) return res.status(404).json({ message: "not found" });
+    // กันเคสเก่า ๆ ที่ยังไม่มี main
+    if (!p.imageMainUrl) {
+      if (p.imageSideUrls?.length) p.imageMainUrl = p.imageSideUrls[0];
+    }
 
-    // ถ้าคุณเก็บเป็น URL เช่น http://localhost:5000/uploads/xxx.png ก็ลบไฟล์ทิ้งให้
-    const unlinkIfLocal = (url) => {
-      if (!url) return;
-      try {
-        // รองรับทั้ง absolute URL และชื่อไฟล์
-        const filename = url.includes("/uploads/")
-          ? url.split("/uploads/")[1]
-          : url;
-        if (!filename) return;
-        const filePath = path.join(process.cwd(), "uploads", filename);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-      } catch { /* เงียบไว้ ไม่ให้ crash */ }
-    };
-
-    unlinkIfLocal(doc.imageMainUrl);
-    (doc.imageSideUrls || []).forEach(unlinkIfLocal);
-
-    return res.json({ ok: true, deletedId: id });
+    await p.save();
+    res.json(p);
   } catch (e) {
-    console.error("delete product error:", e);
-    return res.status(500).json({ message: "delete failed" });
+    console.error("update product error:", e);
+    res.status(500).json({ message: "Update failed" });
   }
+});
+
+/* ---------- READ ---------- */
+router.get("/", async (req, res) => {
+  const list = await Product.find().sort({ createdAt: -1 });
+  res.json(list);
+});
+
+router.get("/:id", async (req, res) => {
+  const p = await Product.findById(req.params.id);
+  if (!p) return res.status(404).json({ message: "Not found" });
+  res.json(p);
+});
+
+/* ---------- DELETE ---------- */
+router.delete("/:id", async (req, res) => {
+  const p = await Product.findByIdAndDelete(req.params.id);
+  if (!p) return res.status(404).json({ message: "Not found" });
+  res.json({ ok: true, deletedId: req.params.id });
 });
 
 export default router;

@@ -93,15 +93,17 @@ export default function ProductAdmin() {
   const submit = async () => {
     try {
       setLoading(true);
+      // ตอน submit
       const payload = {
-        name: form.name || "",
+        name: form.name,
         price: form.price === "" ? "" : Number(form.price),
-        category: form.category || "BS",
-        description: form.description || "",
-        imageMain,
-        imageSide: Array.isArray(imageSide) ? imageSide : [],
+        category: form.category,
+        description: form.description,
+        imageMain,               // <-- File จาก input รูปหลัก
+        imageSide: imageSide,    // <-- Array<File> จาก input รูป side (หลายรูป)
       };
       await createProduct(payload);
+
       alert("บันทึกสินค้าเรียบร้อย");
       resetForm();
       navigate("/admin");
@@ -199,7 +201,7 @@ export default function ProductAdmin() {
           <Typography fontWeight={700} mb={1}>
             รูปหลัก (1 รูป)
           </Typography>
-          <input type="file" accept="image/*" onChange={onPickMain} />
+          <input type="file" accept="image/*" onChange={onPickMain} />     // imageMain 1 รูป
           {/* เรนเดอร์เฉพาะเมื่อมี URL */}
           {previewMain ? (
             <img
@@ -215,7 +217,7 @@ export default function ProductAdmin() {
           <Typography fontWeight={700} mb={1}>
             รูป Side View (หลายรูป) {sideCount ? `• ${sideCount} รูป` : ""}
           </Typography>
-          <input type="file" accept="image/*" multiple onChange={onPickSides} />
+          <input type="file" accept="image/*" multiple onChange={onPickSides} /> // imageSide หลายรูป
           {Array.isArray(previewSides) && previewSides.length > 0 ? (
             <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 1 }}>
               {previewSides.map((src, idx) =>
