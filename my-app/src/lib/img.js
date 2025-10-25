@@ -2,10 +2,12 @@
 export const FILE_BASE =
   import.meta.env.VITE_FILE_BASE || "http://localhost:5000";
 
-export function resolveImg(val) {
-  if (!val) return null;                       // ไม่มี ก็ไม่เรนเดอร์รูป
-  if (/^https?:\/\//i.test(val)) return val;   // ถ้าเป็น URL เต็มแล้ว ใช้เลย
-  // กรณีได้เป็นชื่อไฟล์จาก DB (imageMain เป็นชื่อไฟล์)
-  return `${FILE_BASE}/uploads/${val}`;
+// ฟังก์ชันแปลงชื่อไฟล์หรือ path เป็น URL เต็ม
+export function resolveImg(v) {
+  if (!v) return null;
+  if (/^https?:\/\//i.test(v)) return v;
+  if (v.startsWith("/uploads")) return `http://localhost:5000${v}`;
+  return `http://localhost:5000/uploads/${v}`;
 }
+
 

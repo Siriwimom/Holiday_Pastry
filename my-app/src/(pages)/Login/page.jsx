@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import {
   Box, Typography, TextField, Button, Divider,
-  IconButton, InputAdornment, Snackbar, Alert
+  IconButton, InputAdornment, Snackbar, Alert, Link
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ import { useAuth } from "../../state/auth";
 
 const LoginPage = () => {
   const nav = useNavigate();
-  const { setUser, setToken } = useAuth(); // ✅ ดึง setUser/ setToken มาจริง ๆ
+  const { setUser, setToken } = useAuth();
 
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
@@ -23,20 +23,24 @@ const LoginPage = () => {
     try {
       const { user, token } = await loginApi({ email, password: pw });
       if (!user) throw new Error("Invalid response from server");
-
-      setUser(user);        // ✅ บันทึก user เข้า context
-      setToken(token || ""); // ✅ เก็บ token ไว้ (ถ้ามี)
-
+      setUser(user);
+      setToken(token || "");
       nav(user.role === "admin" ? "/admin" : "/home");
     } catch (e) {
       console.error("login error:", e);
-      setSb({ open: true, type: "error", msg: e?.response?.data?.message || e.message || "Login failed" });
+      setSb({
+        open: true,
+        type: "error",
+        msg: e?.response?.data?.message || e.message || "Login failed",
+      });
     }
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column",
-      background: "linear-gradient(180deg,#fff176 0%, #ffb300 45%, #ffb300 100%)" }}>
+    <Box sx={{
+      minHeight: "100vh", display: "flex", flexDirection: "column",
+      background: "linear-gradient(180deg,#fff176 0%, #ffb300 45%, #ffb300 100%)"
+    }}>
       <Topbar />
 
       <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -63,15 +67,25 @@ const LoginPage = () => {
                   </InputAdornment>
                 ),
               }}
-              sx={{ mb: 2.5, "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "#fff" } }}
+              sx={{ mb: 1.5, "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "#fff" } }}
             />
+
+            {/* ลิงก์ลืมรหัสผ่าน */}
+            <Box sx={{ textAlign: "right", mb: 2.5 }}>
+              <Button variant="text" onClick={() => nav("/forgetpassword")} sx={{ fontWeight: 700, color: "#0d47a1" }}>
+                Forgot password?
+              </Button>
+
+            </Box>
 
             <Box sx={{ position: "relative", mb: 2.5 }}>
               <Box sx={{ position: "absolute", inset: -3, borderRadius: 999, border: "3px solid #1565d8", pointerEvents: "none" }} />
               <Button fullWidth onClick={handleLogin}
-                sx={{ py: 1.2, borderRadius: 999, bgcolor: "#f57c00", color: "#fff",
-                fontWeight: 700, letterSpacing: 0.3, boxShadow: "0 6px 16px rgba(0,0,0,.15)",
-                "&:hover": { bgcolor: "#ff9800" } }}>
+                sx={{
+                  py: 1.2, borderRadius: 999, bgcolor: "#f57c00", color: "#fff",
+                  fontWeight: 700, letterSpacing: 0.3, boxShadow: "0 6px 16px rgba(0,0,0,.15)",
+                  "&:hover": { bgcolor: "#ff9800" }
+                }}>
                 Login
               </Button>
             </Box>
