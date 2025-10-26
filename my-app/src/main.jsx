@@ -1,10 +1,11 @@
-import React, { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import UserProfile from "./pages/UserProfile.jsx";
-import "./index.css"; // Import CSS หลักเข้ามา
+// src/main.jsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App.jsx";           // 👈 ต้องเป็น default import
+import "./index.css";
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <UserProfile />
-  </StrictMode>
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );
