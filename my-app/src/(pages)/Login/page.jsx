@@ -2,13 +2,44 @@
 import React, { useState } from "react";
 import {
   Box, Typography, TextField, Button, Divider,
-  IconButton, InputAdornment, Snackbar, Alert, Link
+  IconButton, InputAdornment, Snackbar, Alert
 } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import Topbar from "../../components/Topbar";
 import { loginApi } from "../../api/auth";
 import { useAuth } from "../../state/auth";
+
+// ปุ่มโค้งมนสไตล์เดียว ใช้ได้กับทั้ง Login / Create Account
+const RoundedButton = ({ children, onClick, color = "#f57c00", hover = "#ff9800" }) => (
+  <Box sx={{ position: "relative", mb: 2.5 }}>
+    <Box
+      sx={{
+        position: "absolute",
+        inset: -3,
+        borderRadius: 999,
+        border: "3px solid #1565d8",
+        pointerEvents: "none",
+      }}
+    />
+    <Button
+      fullWidth
+      onClick={onClick}
+      sx={{
+        py: 1.2,
+        borderRadius: 999,
+        bgcolor: color,
+        color: "#fff",
+        fontWeight: 700,
+        letterSpacing: 0.3,
+        boxShadow: "0 6px 16px rgba(0,0,0,.15)",
+        "&:hover": { bgcolor: hover },
+      }}
+    >
+      {children}
+    </Button>
+  </Box>
+);
 
 const LoginPage = () => {
   const nav = useNavigate();
@@ -75,20 +106,10 @@ const LoginPage = () => {
               <Button variant="text" onClick={() => nav("/forgetpassword")} sx={{ fontWeight: 700, color: "#0d47a1" }}>
                 Forgot password?
               </Button>
-
             </Box>
 
-            <Box sx={{ position: "relative", mb: 2.5 }}>
-              <Box sx={{ position: "absolute", inset: -3, borderRadius: 999, border: "3px solid #1565d8", pointerEvents: "none" }} />
-              <Button fullWidth onClick={handleLogin}
-                sx={{
-                  py: 1.2, borderRadius: 999, bgcolor: "#f57c00", color: "#fff",
-                  fontWeight: 700, letterSpacing: 0.3, boxShadow: "0 6px 16px rgba(0,0,0,.15)",
-                  "&:hover": { bgcolor: "#ff9800" }
-                }}>
-                Login
-              </Button>
-            </Box>
+            {/* ปุ่ม Login (สไตล์เดียวกับ Sign up) */}
+            <RoundedButton onClick={handleLogin}>Login</RoundedButton>
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, my: 1.5 }}>
               <Box sx={{ flex: 1 }}><Divider sx={{ borderColor: "rgba(0,0,0,.35)" }} /></Box>
@@ -96,9 +117,8 @@ const LoginPage = () => {
               <Box sx={{ flex: 1 }}><Divider sx={{ borderColor: "rgba(0,0,0,.35)" }} /></Box>
             </Box>
 
-            <Button variant="text" onClick={() => nav("/register")} sx={{ fontWeight: 700, color: "#0d47a1" }}>
-              Create Account
-            </Button>
+            {/* ปุ่ม Create Account (ใช้ RoundedButton แบบเดียวกัน) */}
+            <RoundedButton onClick={() => nav("/register")}>Create Account</RoundedButton>
           </Box>
         </Box>
       </Box>

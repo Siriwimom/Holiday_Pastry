@@ -1,0 +1,8 @@
+// src/api/base.js
+import axios from "axios";
+
+export const api = axios.create({
+  baseURL: "http://localhost:5000/api",
+  // ถ้าต้องส่ง token:
+  // headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` }
+});
