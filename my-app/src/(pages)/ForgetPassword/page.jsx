@@ -4,6 +4,7 @@ import LockResetIcon from "@mui/icons-material/LockReset";
 import Topbar from "../../components/Topbar";
 import { checkEmailApi, resetPasswordApi } from "../../api/auth";
 import { useNavigate } from "react-router-dom";
+import { registerApi, loginApi } from "../../api/auth";
 
 const ResetPasswordPage = () => {
   const nav = useNavigate();
