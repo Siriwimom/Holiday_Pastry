@@ -1,4 +1,3 @@
-// backend/index.js
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -9,6 +8,7 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
+import userRoutes from "./routes/user.js";   // <<----- เพิ่มตรงนี้
 import { dirname, join } from "path";
 dotenv.config();
 
@@ -21,14 +21,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
-
-
 // serve uploads (static)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/user", userRoutes);  // <<----- เพิ่มตรงนี้
 
 app.get("/", (_req, res) => res.json({ ok: true }));
 
@@ -45,8 +44,7 @@ async function start() {
   try {
     console.log("⏳ connecting to MongoDB...");
     await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 15000, // รอได้หน่อย
-      // tls/ssl Atlas ไม่ต้องใส่ option พิเศษทั่วไปใช้ดี
+      serverSelectionTimeoutMS: 15000,
     });
 
     console.log("✅ MongoDB connected");

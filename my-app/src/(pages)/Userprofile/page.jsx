@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
+import axios from "axios";
 import {
   Box,
   Card,
@@ -34,20 +35,11 @@ function SuccessAlert({ open, onClose }) {
     >
       <Alert severity="success" sx={{ width: 300, fontSize: 18 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Success
-          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>Success</Typography>
           <Typography sx={{ fontSize: 14, mb: 1 }}>
             Well done, you save your address now
           </Typography>
-          <Button
-            sx={{ mt: 0.5, fontWeight: 700 }}
-            variant="contained"
-            color="success"
-            onClick={onClose}
-          >
-            OK
-          </Button>
+          <Button sx={{ mt: 0.5, fontWeight: 700 }} variant="contained" color="success" onClick={onClose}>OK</Button>
         </Box>
       </Alert>
     </Snackbar>
@@ -62,56 +54,89 @@ export default function UserPages() {
   const profileInputRef = useRef();
   const bankInputRef = useRef();
 
-  const handleProfileImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setProfileImage(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-  const handleBankImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setBankImage(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
-
+  // state เริ่มต้นเป็น string ทั้งหมด
   const [userData, setUserData] = useState({
-    username: "Jennie Lee",
-    email: "SE@gmail.com",
-    phone: "0123456789",
-    bankFirst: "Jennie",
-    bankLast: "Lee",
-    bankNumber: "1234567890",
-    bankType: "SCB",
+    username: "",
+    email: "",
+    phone: "",
+    bankFirst: "",
+    bankLast: "",
+    bankNumber: "",
+    bankType: "",
     address: "",
     name: "",
     province: "",
     street: "",
   });
 
+  // normalize helper
+  const norm = (v) => (v == null ? "" : String(v));
+
+  // โหลดข้อมูลครั้งเดียว
+  useEffect(() => {
+    let alive = true;
+    axios.get("/api/user/me")
+      .then(res => {
+        if (!alive) return;
+        const u = res.data || {};
+        setUserData({
+          username: norm(u.username),
+          email:    norm(u.email),
+          phone:    norm(u.phone),
+          bankFirst:norm(u.bankFirst),
+          bankLast: norm(u.bankLast),
+          bankNumber:norm(u.bankNumber),
+          bankType: norm(u.bankType),
+          address:  norm(u.address),
+          name:     norm(u.name),
+          province: norm(u.province),
+          street:   norm(u.street),
+        });
+        if (u.profileImage) setProfileImage(norm(u.profileImage));
+        if (u.bankImage)    setBankImage(norm(u.bankImage));
+      })
+      .catch(console.error);
+    return () => { alive = false; };
+  }, []);
+
+  // onChange: บังคับ string เสมอ
   function handleChange(field, value) {
-    setUserData({ ...userData, [field]: value });
+    const v = value ?? "";
+    setUserData(prev => ({ ...prev, [field]: v }));
   }
 
-  const handleSave = (targetPage) => {
-    setSuccessOpen(true);
-    setTimeout(() => setPage(targetPage || "account"), 2000);
+  const handleProfileImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setProfileImage(String(reader.result || ""));
+    reader.readAsDataURL(file);
+  };
+
+  const handleBankImageUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setBankImage(String(reader.result || ""));
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async (targetPage) => {
+    try {
+      await axios.put("/api/user/me", { ...userData, profileImage, bankImage });
+      setSuccessOpen(true);
+      setTimeout(() => setPage(targetPage || "account"), 2000);
+    } catch (err) {
+      alert("Save failed, please try again");
+      console.error(err);
+    }
   };
 
   function renderBackBtn() {
     return (
       <IconButton
         onClick={() => setPage("account")}
-        sx={{
-          position: "absolute",
-          top: 32,
-          left: 24,
-          color: "#333"
-        }}
+        sx={{ position: "absolute", top: 32, left: 24, color: "#333" }}
         aria-label="back"
         size="large"
       >
@@ -123,16 +148,10 @@ export default function UserPages() {
   function AccountPage() {
     return (
       <Card sx={mainCardStyle}>
-        <Typography variant="h6" sx={cardTitleStyle}>
-          HOLIDAY PASTRY
-        </Typography>
+        <Typography variant="h6" sx={cardTitleStyle}>HOLIDAY PASTRY</Typography>
         <Box sx={profileBoxStyle}>
           <Avatar src={profileImage} sx={avatarStyle} />
-          <IconButton
-            sx={cameraIconStyle}
-            onClick={() => profileInputRef.current.click()}
-            aria-label="upload"
-          >
+          <IconButton sx={cameraIconStyle} onClick={() => profileInputRef.current.click()} aria-label="upload">
             <CameraAltIcon />
             <input
               type="file"
@@ -145,12 +164,12 @@ export default function UserPages() {
           <Typography sx={{ fontSize: 12, mb: 2 }}>Edit Profile</Typography>
         </Box>
         <CardContent>
-          <Typography> User name</Typography>
+          <Typography>User name</Typography>
           <TextField
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.username}
+            value={userData.username ?? ""}
             onChange={e => handleChange("username", e.target.value)}
           />
           <Typography>Email</Typography>
@@ -158,7 +177,7 @@ export default function UserPages() {
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.email}
+            value={userData.email ?? ""}
             onChange={e => handleChange("email", e.target.value)}
           />
           <Typography>Phone</Typography>
@@ -166,15 +185,17 @@ export default function UserPages() {
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.phone}
+            value={userData.phone ?? ""}
             onChange={e => handleChange("phone", e.target.value)}
           />
           <Typography>Address</Typography>
           <TextField
             size="small"
             fullWidth
+            multiline
+            rows={2}
             sx={fieldStyle}
-            value={userData.address}
+            value={userData.address ?? ""}
             onChange={e => handleChange("address", e.target.value)}
             placeholder="Province, District, Subdistrict, House number, Street"
           />
@@ -183,8 +204,9 @@ export default function UserPages() {
             <Grid item xs={4}>
               <TextField
                 size="small"
+                fullWidth
                 sx={fieldStyle}
-                value={userData.bankFirst}
+                value={userData.bankFirst ?? ""}
                 onChange={e => handleChange("bankFirst", e.target.value)}
                 placeholder="First Name"
               />
@@ -192,8 +214,9 @@ export default function UserPages() {
             <Grid item xs={4}>
               <TextField
                 size="small"
+                fullWidth
                 sx={fieldStyle}
-                value={userData.bankLast}
+                value={userData.bankLast ?? ""}
                 onChange={e => handleChange("bankLast", e.target.value)}
                 placeholder="Last Name"
               />
@@ -201,8 +224,9 @@ export default function UserPages() {
             <Grid item xs={4}>
               <TextField
                 size="small"
+                fullWidth
                 sx={fieldStyle}
-                value={userData.bankType}
+                value={userData.bankType ?? ""}
                 onChange={e => handleChange("bankType", e.target.value)}
                 placeholder="Bank"
               />
@@ -228,16 +252,10 @@ export default function UserPages() {
     return (
       <Card sx={mainCardStyle}>
         {renderBackBtn()}
-        <Typography variant="h6" sx={cardTitleStyle}>
-          HOLIDAY PASTRY
-        </Typography>
+        <Typography variant="h6" sx={cardTitleStyle}>HOLIDAY PASTRY</Typography>
         <Box sx={profileBoxStyle}>
           <Avatar src={profileImage} sx={avatarStyle} />
-          <IconButton
-            sx={cameraIconStyle}
-            onClick={() => profileInputRef.current.click()}
-            aria-label="upload"
-          >
+          <IconButton sx={cameraIconStyle} onClick={() => profileInputRef.current.click()} aria-label="upload">
             <CameraAltIcon />
           </IconButton>
           <Typography sx={{ fontSize: 12, mb: 2 }}>Edit Profile</Typography>
@@ -248,7 +266,7 @@ export default function UserPages() {
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.name}
+            value={userData.name ?? ""}
             onChange={e => handleChange("name", e.target.value)}
           />
           <Typography>Province/District/Subdistrict</Typography>
@@ -256,7 +274,7 @@ export default function UserPages() {
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.province}
+            value={userData.province ?? ""}
             onChange={e => handleChange("province", e.target.value)}
             placeholder="Province, District, Subdistrict"
           />
@@ -265,16 +283,11 @@ export default function UserPages() {
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.street}
+            value={userData.street ?? ""}
             onChange={e => handleChange("street", e.target.value)}
             placeholder="House number, Street"
           />
-          <Button
-            color="primary"
-            variant="contained"
-            sx={{ mt: 3, width: "100%" }}
-            onClick={() => handleSave("account")}
-          >
+          <Button color="primary" variant="contained" sx={{ mt: 3, width: "100%" }} onClick={() => handleSave("account")}>
             Save
           </Button>
         </CardContent>
@@ -286,16 +299,10 @@ export default function UserPages() {
     return (
       <Card sx={mainCardStyle}>
         {renderBackBtn()}
-        <Typography variant="h6" sx={cardTitleStyle}>
-          HOLIDAY PASTRY
-        </Typography>
+        <Typography variant="h6" sx={cardTitleStyle}>HOLIDAY PASTRY</Typography>
         <Box sx={profileBoxStyle}>
           <Avatar src={profileImage} sx={avatarStyle} />
-          <IconButton
-            sx={cameraIconStyle}
-            onClick={() => profileInputRef.current.click()}
-            aria-label="upload"
-          >
+          <IconButton sx={cameraIconStyle} onClick={() => profileInputRef.current.click()} aria-label="upload">
             <CameraAltIcon />
           </IconButton>
           <Typography sx={{ fontSize: 12, mb: 2 }}>Edit Profile</Typography>
@@ -306,7 +313,7 @@ export default function UserPages() {
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.username}
+            value={userData.username ?? ""}
             onChange={e => handleChange("username", e.target.value)}
           />
           <Typography>Phone</Typography>
@@ -314,7 +321,7 @@ export default function UserPages() {
             size="small"
             fullWidth
             sx={fieldStyle}
-            value={userData.phone}
+            value={userData.phone ?? ""}
             onChange={e => handleChange("phone", e.target.value)}
           />
           <Typography>Bank Information</Typography>
@@ -322,8 +329,9 @@ export default function UserPages() {
             <Grid item xs={4}>
               <TextField
                 size="small"
+                fullWidth
                 sx={fieldStyle}
-                value={userData.bankFirst}
+                value={userData.bankFirst ?? ""}
                 onChange={e => handleChange("bankFirst", e.target.value)}
                 placeholder="First Name"
               />
@@ -331,8 +339,9 @@ export default function UserPages() {
             <Grid item xs={4}>
               <TextField
                 size="small"
+                fullWidth
                 sx={fieldStyle}
-                value={userData.bankLast}
+                value={userData.bankLast ?? ""}
                 onChange={e => handleChange("bankLast", e.target.value)}
                 placeholder="Last Name"
               />
@@ -340,8 +349,9 @@ export default function UserPages() {
             <Grid item xs={4}>
               <TextField
                 size="small"
+                fullWidth
                 sx={fieldStyle}
-                value={userData.bankNumber}
+                value={userData.bankNumber ?? ""}
                 onChange={e => handleChange("bankNumber", e.target.value)}
                 placeholder="Account Number"
               />
@@ -352,40 +362,14 @@ export default function UserPages() {
             <img
               src={bankImage}
               alt="bank slip"
-              style={{
-                width: 120,
-                height: 68,
-                borderRadius: 6,
-                border: "1.5px solid #ddd",
-                background: "#fff"
-              }}
+              style={{ width: 120, height: 68, borderRadius: 6, border: "1.5px solid #ddd", background: "#fff" }}
               onClick={() => bankInputRef.current.click()}
             />
-            <input
-              type="file"
-              accept="image/*"
-              ref={bankInputRef}
-              style={{ display: "none" }}
-              onChange={handleBankImageUpload}
-            />
+            <input type="file" accept="image/*" ref={bankInputRef} style={{ display: "none" }} onChange={handleBankImageUpload} />
           </Box>
           <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <Button
-              color="primary"
-              variant="contained"
-              sx={btnStyle}
-              onClick={() => handleSave("account")}
-            >
-              Save
-            </Button>
-            <Button
-              color="error"
-              variant="contained"
-              sx={btnStyle}
-              onClick={() => setPage("account")}
-            >
-              Cancel
-            </Button>
+            <Button color="primary" variant="contained" sx={btnStyle} onClick={() => handleSave("account")}>Save</Button>
+            <Button color="error" variant="contained" sx={btnStyle} onClick={() => setPage("account")}>Cancel</Button>
           </Box>
         </CardContent>
       </Card>
@@ -396,9 +380,7 @@ export default function UserPages() {
     return (
       <Card sx={mainCardStyle}>
         {renderBackBtn()}
-        <Typography variant="h6" sx={cardTitleStyle}>
-          CHANGE PASSWORD
-        </Typography>
+        <Typography variant="h6" sx={cardTitleStyle}>CHANGE PASSWORD</Typography>
         <CardContent>
           <Typography>Current Password</Typography>
           <TextField size="small" sx={fieldStyle} fullWidth type="password" />
@@ -423,7 +405,10 @@ export default function UserPages() {
     <Box sx={{ minHeight: "100vh", bgcolor: "#fffde7", display: "flex", flexDirection: "column" }}>
       <Topbar />
       <SearchBar />
-      <Container maxWidth="sm" sx={{ py: 5, flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Container
+        maxWidth="sm"
+        sx={{ py: 5, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", width: "100%" }}
+      >
         {page === "account" && <AccountPage />}
         {page === "location" && <LocationPage />}
         {page === "setting" && <SettingPage />}
@@ -440,49 +425,16 @@ const mainCardStyle = {
   bgcolor: "linear-gradient(180deg, #ffe366 0%, #ffd115 60%, #ffb114 100%)",
   borderRadius: 4,
   minWidth: 370,
-  maxWidth: 400,
+  maxWidth: 500,
+  width: "100%",
   py: 1.5,
   px: 2.5,
   boxShadow: 6,
   position: "relative",
 };
-
-const cardTitleStyle = {
-  fontWeight: 700,
-  color: "#fff",
-  textShadow: "0 2px 5px #e7a708",
-  pt: 2,
-  pb: 1,
-  textAlign: "center",
-};
-
-const avatarStyle = {
-  width: 72,
-  height: 72,
-  bgcolor: "#fafafa",
-  border: "3px solid #fffde7",
-  mt: 2,
-};
-
-const cameraIconStyle = {
-  position: "absolute",
-  bottom: 24,
-  right: 45,
-  bgcolor: "#fff",
-  border: "1.5px solid #ddd",
-  ":hover": { bgcolor: "#fafafa" },
-  zIndex: 2,
-  p: 0.5,
-};
-
-const profileBoxStyle = {
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "center",
-  position: "relative",
-  mb: 1.5,
-};
-
+const cardTitleStyle = { fontWeight: 700, color: "#fff", textShadow: "0 2px 5px #e7a708", pt: 2, pb: 1, textAlign: "center" };
+const avatarStyle = { width: 72, height: 72, bgcolor: "#fafafa", border: "3px solid #fffde7", mt: 2 };
+const cameraIconStyle = { position: "absolute", bottom: 24, right: 45, bgcolor: "#fff", border: "1.5px solid #ddd", ":hover": { bgcolor: "#fafafa" }, zIndex: 2, p: 0.5 };
+const profileBoxStyle = { display: "flex", flexDirection: "column", alignItems: "center", position: "relative", mb: 1.5 };
 const fieldStyle = { mb: 1, bgcolor: "#fff" };
-
 const btnStyle = { fontWeight: 700, flex: 1 };
