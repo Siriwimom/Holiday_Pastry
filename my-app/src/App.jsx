@@ -16,6 +16,8 @@ import CheckoutPage from "./(pages)/Checkout/page.jsx";
 import PurchasesPage from "./(pages)/Purchases/page.jsx";
 import AdminPage from "./(pages)/Admin_Page/page.jsx";
 import ProductAdmin from "./(pages)/Admin_Page/ProductAdmin.jsx";
+// เพิ่มตรงนี้
+import UserProfilePage from "./(pages)/Userprofile/page.jsx";
 
 function RequireAdmin({ children }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -38,6 +40,8 @@ export default function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/purchases" element={<PurchasesPage />} />
+            {/* เพิ่ม route ผู้ใช้ */}
+            <Route path="/user" element={<UserProfilePage />} />
 
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/product/new" element={<RequireAdmin><ProductAdmin /></RequireAdmin>} />

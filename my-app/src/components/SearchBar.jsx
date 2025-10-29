@@ -73,8 +73,9 @@ export default function SearchBar({ placeholder = "Search" }) {
 
         {/* ไอคอนขวาสุด */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {/* ปุ่มรูปคน - ให้ไป "/user" */}
           <IconButton
-            onClick={() => nav("/account")}
+            onClick={() => nav("/user")}
             sx={{
               color: "#fff",
               bgcolor: "rgba(255,255,255,0.25)",
@@ -83,6 +84,7 @@ export default function SearchBar({ placeholder = "Search" }) {
           >
             <PersonOutlineIcon />
           </IconButton>
+          {/* ปุ่มตะกร้า */}
           <IconButton
             onClick={() => nav("/cart")}
             sx={{
