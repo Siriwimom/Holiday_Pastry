@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import Topbar from "../../components/Topbar";
 import { loginApi } from "../../api/auth";
 import { useAuth } from "../../state/auth";
+import { setAuthHeaders } from "../../lib/api";
 
 // ปุ่มโค้งมนสไตล์เดียว ใช้ได้กับทั้ง Login / Create Account
 const RoundedButton = ({ children, onClick, color = "#f57c00", hover = "#ff9800" }) => (
@@ -54,8 +55,16 @@ const LoginPage = () => {
     try {
       const { user, token } = await loginApi({ email, password: pw });
       if (!user) throw new Error("Invalid response from server");
+
+      // ✅ อัปเดต context
       setUser(user);
       setToken(token || "");
+
+      // ✅ ตั้ง header ให้ axios ทุกคำขอถัดไป + เก็บลง localStorage (กันหายหลังรีเฟรช)
+      setAuthHeaders({ token, userId: user?._id });
+      localStorage.setItem("auth:user", JSON.stringify(user));
+      localStorage.setItem("auth:token", token || "");
+
       nav(user.role === "admin" ? "/admin" : "/home");
     } catch (e) {
       console.error("login error:", e);
@@ -82,13 +91,21 @@ const LoginPage = () => {
 
           <Box sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, backdropFilter: "blur(2px)" }}>
             <TextField
-              label="Email" type="email" fullWidth value={email}
+              label="Email"
+              type="email"
+              fullWidth
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               sx={{ mb: 2, "& .MuiOutlinedInput-root": { borderRadius: 999, bgcolor: "#fff" } }}
             />
             <TextField
-              label="Password" type={showPw ? "text" : "password"} fullWidth value={pw}
+              label="Password"
+              type={showPw ? "text" : "password"}
+              fullWidth
+              value={pw}
               onChange={(e) => setPw(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
