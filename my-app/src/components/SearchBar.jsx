@@ -18,10 +18,10 @@ export default function SearchBar({ placeholder = "Search" }) {
   const [value, setValue] = useState(urlQ);
 
   const doSearch = () => {
-    const q = value.trim();
-    if (!q) return;
-    nav(`/search?q=${encodeURIComponent(q)}`);
-  };
+  const q = value.trim();
+  if (q.length < 2) return; // กันเคส "a" แล้วพาไปเจอทุกตัว
+  nav(`/search?q=${encodeURIComponent(q)}`);
+};
 
   return (
     <Box

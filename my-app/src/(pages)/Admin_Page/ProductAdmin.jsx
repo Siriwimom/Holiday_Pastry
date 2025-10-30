@@ -12,7 +12,12 @@ import {
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useNavigate, useParams } from "react-router-dom";
-import { createProduct, deleteProduct, getProduct } from "../../api/products";
+import {
+  createProduct,
+  deleteProduct,
+  getProduct,
+  updateProduct, // ✅ เพิ่ม
+} from "../../api/products";
 
 export default function ProductAdmin() {
   const navigate = useNavigate();
@@ -33,15 +38,17 @@ export default function ProductAdmin() {
   const [previewSides, setPreviewSides] = useState([]); // string[]
   const [loading, setLoading] = useState(false);
 
-  // ถ้ามี id → โหลดข้อมูลสินค้ามาเติมให้ดู (สำหรับกดลบ)
+  // ถ้ามี id → โหลดข้อมูลสินค้ามาเติมให้ดู
   useEffect(() => {
-    let revokeList = [];
-    const run = async () => {
+    let alive = true;
+    (async () => {
       if (!id) return;
       try {
         setLoading(true);
         const p = await getProduct(id);
-        // เติมค่าฟอร์มจากของเดิม
+        if (!alive) return;
+
+        // เติมค่าฟอร์ม
         setForm({
           name: p?.name || "",
           price: p?.price ?? "",
@@ -49,24 +56,17 @@ export default function ProductAdmin() {
           description: p?.description || "",
         });
 
-        // พรีวิวจาก URL ที่แบ็กเอนด์คืน (ไม่ต้อง /uploads เอง)
-        if (p?.imageMainUrl) setPreviewMain(p.imageMainUrl);
-        if (Array.isArray(p?.imageSideUrls) && p.imageSideUrls.length) {
-          setPreviewSides(p.imageSideUrls.filter(Boolean));
-        }
+        // พรีวิว URL ที่มีอยู่แล้วจากแบ็กเอนด์
+        setPreviewMain(p?.imageMainUrl || null);
+        setPreviewSides(Array.isArray(p?.imageSideUrls) ? p.imageSideUrls.filter(Boolean) : []);
       } catch (e) {
         console.error("load product error:", e);
         alert(e?.response?.data?.message || "โหลดสินค้าไม่สำเร็จ");
       } finally {
         setLoading(false);
       }
-    };
-    run();
-
-    // cleanup revokeObjectURL ตอนเปลี่ยนหน้า
-    return () => {
-      revokeList.forEach((u) => URL.revokeObjectURL(u));
-    };
+    })();
+    return () => { alive = false; };
   }, [id]);
 
   const onPickMain = (e) => {
@@ -79,7 +79,7 @@ export default function ProductAdmin() {
     const files = Array.from(e.target.files || []);
     setImageSide(files);
     const urls = files.map((f) => URL.createObjectURL(f));
-    setPreviewSides(urls);
+    setPreviewSides(urls.length ? urls : previewSides); // ถ้าไม่เลือกใหม่ ให้คงรูปเดิม
   };
 
   const resetForm = () => {
@@ -90,26 +90,49 @@ export default function ProductAdmin() {
     setPreviewSides([]);
   };
 
+  // CREATE
   const submit = async () => {
     try {
       setLoading(true);
-      // ตอน submit
       const payload = {
         name: form.name,
         price: form.price === "" ? "" : Number(form.price),
         category: form.category,
         description: form.description,
-        imageMain,               // <-- File จาก input รูปหลัก
-        imageSide: imageSide,    // <-- Array<File> จาก input รูป side (หลายรูป)
+        imageMain,
+        imageSide,
       };
       await createProduct(payload);
-
       alert("บันทึกสินค้าเรียบร้อย");
       resetForm();
       navigate("/admin");
     } catch (e) {
       console.error("save product error:", e);
       alert(e?.response?.data?.message || e.message || "บันทึกไม่สำเร็จ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // UPDATE
+  const handleUpdate = async () => {
+    if (!id) return;
+    try {
+      setLoading(true);
+      const payload = {
+        name: form.name,
+        price: form.price === "" ? "" : Number(form.price),
+        category: form.category,
+        description: form.description,
+        imageMain,        // แนบก็ต่อเมื่อผู้ใช้เลือกใหม่ (เป็น File) → backend จะอัปเดต main
+        imageSide,        // ถ้ามีไฟล์ใหม่ → backend จะ push ต่อท้าย side ได้หลายรูป
+      };
+      await updateProduct(id, payload);
+      alert("อัปเดตข้อมูลเรียบร้อย");
+      navigate("/admin");
+    } catch (e) {
+      console.error("update product error:", e);
+      alert(e?.response?.data?.message || e.message || "อัปเดตไม่สำเร็จ");
     } finally {
       setLoading(false);
     }
@@ -201,8 +224,9 @@ export default function ProductAdmin() {
           <Typography fontWeight={700} mb={1}>
             รูปหลัก (1 รูป)
           </Typography>
-          <input type="file" accept="image/*" onChange={onPickMain} />     // imageMain 1 รูป
-          {/* เรนเดอร์เฉพาะเมื่อมี URL */}
+          {/* imageMain 1 รูป */}
+          <input type="file" accept="image/*" onChange={onPickMain} />
+          {/* พรีวิว */}
           {previewMain ? (
             <img
               src={previewMain}
@@ -217,7 +241,8 @@ export default function ProductAdmin() {
           <Typography fontWeight={700} mb={1}>
             รูป Side View (หลายรูป) {sideCount ? `• ${sideCount} รูป` : ""}
           </Typography>
-          <input type="file" accept="image/*" multiple onChange={onPickSides} /> // imageSide หลายรูป
+          {/* imageSide หลายรูป */}
+          <input type="file" accept="image/*" multiple onChange={onPickSides} />
           {Array.isArray(previewSides) && previewSides.length > 0 ? (
             <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 1 }}>
               {previewSides.map((src, idx) =>
@@ -242,7 +267,7 @@ export default function ProductAdmin() {
 
         {/* ปุ่มแอ็กชัน */}
         <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-          {/* ปุ่มบันทึกแสดงเฉพาะตอน "เพิ่มใหม่" (ไม่มี id) */}
+          {/* สร้างใหม่ */}
           {!id && (
             <Button
               disabled={loading}
@@ -254,11 +279,23 @@ export default function ProductAdmin() {
             </Button>
           )}
 
+          {/* อัปเดตของเดิม */}
+          {id && (
+            <Button
+              disabled={loading}
+              variant="contained"
+              onClick={handleUpdate}
+              sx={{ bgcolor: "#ffa000", "&:hover": { bgcolor: "#ffb300" } }}
+            >
+              บันทึกข้อมูล
+            </Button>
+          )}
+
           <Button variant="outlined" onClick={resetForm} disabled={loading}>
             ล้างฟอร์ม
           </Button>
 
-          {/* ปุ่มลบ แสดงเฉพาะเมื่อมี id */}
+          {/* ลบ */}
           {id && (
             <Button
               color="error"

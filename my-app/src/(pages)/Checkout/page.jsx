@@ -1,3 +1,4 @@
+// src/(pages)/Checkout/page.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Container, Typography, Divider } from "@mui/material";
 import Topbar from "../../components/Topbar";
@@ -5,20 +6,13 @@ import SearchBar from "../../components/SearchBar";
 import Footer from "../../components/Footer";
 import { useCart } from "../../state/cart.jsx";
 import { useNavigate } from "react-router-dom";
+const qrcode = "http://localhost:5000/uploads/1QR.jpg";
 
-const qrcode = "data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'>\
-<rect width='100%' height='100%' fill='white'/>\
-<rect x='40' y='40' width='80' height='80' fill='black'/>\
-<rect x='280' y='40' width='80' height='80' fill='black'/>\
-<rect x='40' y='280' width='80' height='80' fill='black'/>\
-<rect x='120' y='120' width='160' height='160' fill='black' opacity='0.1'/>\
-</svg>";
 
 export default function CheckoutPage() {
-  const { items, total } = useCart();
+  const { items, total, clear } = useCart();   // ✅ ดึง clear มาด้วย
   const navigate = useNavigate();
-  const { clear } = useCart();
+
   // นับถอยหลัง 15:00
   const [sec, setSec] = useState(15 * 60);
   useEffect(() => {
@@ -33,6 +27,11 @@ export default function CheckoutPage() {
 
   const shipping = 0;
   const grand = total + shipping;
+
+  const onPaymentCompleted = async () => {
+    await clear();               // ✅ เคลียร์ก่อน
+    navigate("/purchases");      // ไปหน้าประวัติสั่งซื้อ
+  };
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "#fffde7", display: "flex", flexDirection: "column" }}>
@@ -63,16 +62,20 @@ export default function CheckoutPage() {
               boxShadow: "inset 0 0 0 10px rgba(0,0,0,.06)",
             }}
           >
-            <img src={qrcode} alt="QR" style={{ width: "75%", height: "75%", objectFit: "contain" }} />
+            <img
+              src={qrcode}
+              alt="QR Code"
+              style={{
+                width: "75%",
+                height: "75%",
+                objectFit: "contain",
+                borderRadius: 12
+              }}
+              onError={(e) => (e.currentTarget.src = "/placeholder.png")}
+            />
           </Box>
 
-          <Box
-            sx={{
-              mt: 2.5,
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
+          <Box sx={{ mt: 2.5, display: "flex", justifyContent: "center" }}>
             <button
               style={{
                 background: "#ffa000",
@@ -83,7 +86,7 @@ export default function CheckoutPage() {
                 fontWeight: 700,
                 cursor: "pointer",
               }}
-              onClick={() => { clear(); navigate("/purchases"); }}
+              onClick={onPaymentCompleted}
             >
               PAYMENT COMPLETED
             </button>
@@ -104,7 +107,6 @@ export default function CheckoutPage() {
                 style={{ width: 80, height: 80, borderRadius: 12, objectFit: "cover" }}
                 onError={(e) => (e.currentTarget.src = "/placeholder.png")}
               />
-
               <Box sx={{ flex: 1 }}>
                 <Typography fontWeight={700}>{it.name}</Typography>
                 <Typography sx={{ fontSize: 12 }}>

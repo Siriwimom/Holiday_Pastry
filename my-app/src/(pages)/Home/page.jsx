@@ -1,6 +1,8 @@
 // src/(pages)/Home/page.jsx
 import React, { useEffect, useState, useMemo } from "react";
+
 import SearchBar from "../../components/SearchBar";
+
 import {
   Box,
   Container,
@@ -198,9 +200,12 @@ export default function HomePage() {
       <Box
         sx={{
           position: "relative",
-          background: "linear-gradient(180deg,#ffa726 0%, #ef6c00 100%)",
           color: "#fff",
           py: { xs: 10, md: 16 },
+          // ไล่สี + รูปพื้นหลังพร้อมกัน
+          backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.55) 100%), url("http://localhost:5000/uploads/1761386700245_xel6d6xrblp.jpg")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
         <Container maxWidth="lg" sx={{ position: "relative" }}>
@@ -217,18 +222,15 @@ export default function HomePage() {
           >
             Holiday&nbsp;Pastry
           </Typography>
+
           <Typography
-            sx={{
-              textAlign: "center",
-              mt: 1,
-              opacity: .9,
-              fontWeight: 500,
-            }}
+            sx={{ textAlign: "center", mt: 1, opacity: 0.9, fontWeight: 500 }}
           >
             Freshly baked • Made with love
           </Typography>
         </Container>
       </Box>
+
 
       {/* Loading */}
       {loading && (

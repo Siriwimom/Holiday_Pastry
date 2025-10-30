@@ -9,10 +9,10 @@ const router = express.Router();
 // debug route ไว้เช็คว่าไฟล์นี้ถูก mount แล้วจริงไหม
 router.get("/ping", (req, res) => res.json({ ok: true, where: "auth" }));
 
-// ===== LOGIN (ของเดิมคุณใช้อยู่ได้) =====
 router.post("/login", async (req, res) => {
   try {
-    const { email, password } = req.body || {};
+    const email = (req.body?.email || "").trim().toLowerCase();
+    const password = req.body?.password || "";
     if (!email || !password) return res.status(400).json({ message: "email and password are required" });
 
     const u = await User.findOne({ email }).select("+passwordHash");
@@ -27,10 +27,7 @@ router.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({
-      user: { _id: u._id, email: u.email, name: u.name || "", role: u.role || "user" },
-      token
-    });
+    res.json({ user: { _id: u._id, email: u.email, name: u.name || "", role: u.role || "user" }, token });
   } catch (e) {
     console.error("login error:", e);
     res.status(500).json({ message: "Login failed" });
@@ -56,24 +53,40 @@ router.post("/check-email", async (req, res) => {
 // ===== NEW: รีเซ็ตรหัสผ่าน =====
 router.post("/reset-password", async (req, res) => {
   try {
-    const { email, newPassword, password } = req.body || {};
-    const pwd = (newPassword ?? password)?.toString();
-
-    if (!email || !pwd) {
-      return res.status(400).json({ message: "Email and newPassword are required" });
-    }
+    const email = (req.body?.email || "").trim().toLowerCase();
+    const pwd = (req.body?.newPassword ?? req.body?.password)?.toString();
+    if (!email || !pwd) return res.status(400).json({ message: "Email and newPassword are required" });
 
     const u = await User.findOne({ email });
     if (!u) return res.status(404).json({ message: "Email not found" });
 
     u.passwordHash = await bcrypt.hash(pwd, 10);
     await u.save();
-
     return res.json({ ok: true, message: "Password updated successfully" });
   } catch (e) {
-    console.error("reset-password error:", e, "body=", req.body);
+    console.error("reset-password error:", e);
     res.status(500).json({ message: "reset password failed" });
   }
 });
+router.post("/register", async (req, res) => {
+  try {
+    const name = req.body?.name || "";
+    const email = (req.body?.email || "").trim().toLowerCase();
+    const password = req.body?.password || "";
+    if (!email || !password) return res.status(400).json({ message: "Email and password required" });
+
+    const exist = await User.findOne({ email });
+    if (exist) return res.status(409).json({ message: "Email already exists" });
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, passwordHash: hash, role: "user" });
+    res.json({ ok: true, user: { id: user._id, name: user.name || "", email: user.email, role: user.role } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Register failed" });
+  }
+});
+
+
 
 export default router;
