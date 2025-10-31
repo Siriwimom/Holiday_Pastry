@@ -11,6 +11,8 @@ import userRoutes from "./routes/user.js";
 import productRoutes from "./routes/products.js";
 import cartRoutes from "./routes/cart.js";
 
+import { dirname, join } from "path";
+import purchasesRoutes from "./routes/purchases.js";
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,6 +39,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/purchases", purchasesRoutes);
 
 app.get("/", (_req, res) => res.json({ ok: true }));
 

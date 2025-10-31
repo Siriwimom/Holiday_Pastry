@@ -101,10 +101,51 @@ router.post("/reset-password", async (req, res) => {
     await user.save();
 
     res.json({ ok: true, message: "Password changed successfully" });
+// ===== NEW: รีเซ็ตรหัสผ่าน =====
+router.post("/reset-password", async (req, res) => {
+  try {
+    console.log("RESET body:", req.body); // ← ดูจริงว่ามาอะไร
+
+    const email = (req.body?.email || "").trim().toLowerCase();
+    // รองรับทั้ง newPassword และ password (กันตกหล่น)
+    const pwd = (req.body?.newPassword ?? req.body?.password)?.toString() || "";
+
+    if (!email || !pwd) {
+      return res.status(400).json({ message: "Email and newPassword are required" });
+    }
+
+    const u = await User.findOne({ email });
+    if (!u) return res.status(404).json({ message: "User not found" });
+
+    u.passwordHash = await bcrypt.hash(pwd, 10);
+    await u.save();
+    return res.json({ ok: true, message: "Password reset successful" });
   } catch (e) {
     console.error("reset-password error:", e);
     res.status(500).json({ message: "Password change failed" });
   }
 });
+
+
+router.post("/register", async (req, res) => {
+  try {
+    const name = req.body?.name || "";
+    const email = (req.body?.email || "").trim().toLowerCase();
+    const password = req.body?.password || "";
+    if (!email || !password) return res.status(400).json({ message: "Email and password required" });
+
+    const exist = await User.findOne({ email });
+    if (exist) return res.status(409).json({ message: "Email already exists" });
+
+    const hash = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, passwordHash: hash, role: "user" });
+    res.json({ ok: true, user: { id: user._id, name: user.name || "", email: user.email, role: user.role } });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Register failed" });
+  }
+});
+
+
 
 export default router;
