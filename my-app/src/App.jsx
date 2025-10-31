@@ -17,16 +17,24 @@ import CheckoutPage from "./(pages)/Checkout/page.jsx";
 import PurchasesPage from "./(pages)/Purchases/page.jsx";
 import AdminPage from "./(pages)/Admin_Page/page.jsx";
 import ProductAdmin from "./(pages)/Admin_Page/ProductAdmin.jsx";
+import UserProfilePage from "./(pages)/Userprofile/page.jsx"; // ✅ เพิ่มหน้าโปรไฟล์
 
+// ✅ ส่วนตรวจสอบสิทธิ์ admin
 function RequireAdmin({ children }) {
-  // ✅ อ่านจาก auth:user (ให้ตรงกับตอนบันทึก)
   const user = JSON.parse(localStorage.getItem("auth:user") || "null");
   if (!user || user.role !== "admin") return <Navigate to="/home" replace />;
   return children;
 }
 
+// ✅ ส่วนตรวจสอบว่าต้อง login ก่อนถึงจะเข้าได้
+function RequireAuth({ children }) {
+  const token = localStorage.getItem("auth:token");
+  if (!token) return <Navigate to="/" replace />;
+  return children;
+}
+
 export default function App() {
-  // ✅ boot ครั้งเดียว เมื่อเปิดเว็บ/รีเฟรช
+  // ✅ boot headers ครั้งเดียวตอนเปิดเว็บ
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("auth:user") || "null");
@@ -41,20 +49,98 @@ export default function App() {
         <CartProvider>
           <BrowserRouter>
             <Routes>
+              {/* ✅ หน้า public */}
               <Route path="/" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgetpassword" element={<ResetPasswordPage />} />
-              <Route path="/home" element={<HomePage />} />
-              <Route path="/product/:id" element={<ProductPage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/purchases" element={<PurchasesPage />} />
 
-              <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
-              <Route path="/admin/product/new" element={<RequireAdmin><ProductAdmin /></RequireAdmin>} />
-              <Route path="/admin/product/:id" element={<RequireAdmin><ProductAdmin /></RequireAdmin>} />
+              {/* ✅ หน้า user */}
+              <Route
+                path="/home"
+                element={
+                  <RequireAuth>
+                    <HomePage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/product/:id"
+                element={
+                  <RequireAuth>
+                    <ProductPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/search"
+                element={
+                  <RequireAuth>
+                    <SearchPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/cart"
+                element={
+                  <RequireAuth>
+                    <CartPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/checkout"
+                element={
+                  <RequireAuth>
+                    <CheckoutPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/purchases"
+                element={
+                  <RequireAuth>
+                    <PurchasesPage />
+                  </RequireAuth>
+                }
+              />
 
+              {/* ✅ หน้าโปรไฟล์ผู้ใช้ */}
+              <Route
+                path="/user"
+                element={
+                  <RequireAuth>
+                    <UserProfilePage />
+                  </RequireAuth>
+                }
+              />
+
+              {/* ✅ หน้าแอดมิน */}
+              <Route
+                path="/admin"
+                element={
+                  <RequireAdmin>
+                    <AdminPage />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/admin/product/new"
+                element={
+                  <RequireAdmin>
+                    <ProductAdmin />
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/admin/product/:id"
+                element={
+                  <RequireAdmin>
+                    <ProductAdmin />
+                  </RequireAdmin>
+                }
+              />
+
+              {/* ✅ default redirect */}
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </BrowserRouter>

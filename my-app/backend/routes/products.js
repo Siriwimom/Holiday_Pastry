@@ -3,7 +3,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import Product from "../models/product.js";
+import Product from "../models/Product.js";
 
 const router = express.Router();
 
