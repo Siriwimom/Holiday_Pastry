@@ -6,13 +6,13 @@ import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
+// ✅ Routes
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
 import productRoutes from "./routes/products.js";
 import cartRoutes from "./routes/cart.js";
-
-import { dirname, join } from "path";
 import purchasesRoutes from "./routes/purchases.js";
+
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -21,11 +21,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ✅ Middleware
-app.use(cors({
-  origin: "http://localhost:5173",
-  credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization", "x-user-id"],
+  })
+);
 app.options("*", cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -41,6 +43,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/purchases", purchasesRoutes);
 
+// ✅ Root route
 app.get("/", (_req, res) => res.json({ ok: true }));
 
 // ✅ Connect MongoDB
