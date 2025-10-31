@@ -1,4 +1,3 @@
-// src/(pages)/Checkout/page.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { Box, Container, Typography, Divider } from "@mui/material";
 import Topbar from "../../components/Topbar";
@@ -6,19 +5,21 @@ import SearchBar from "../../components/SearchBar";
 import Footer from "../../components/Footer";
 import { useCart } from "../../state/cart.jsx";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../state/auth.jsx";
+
 const qrcode = "http://localhost:5000/uploads/1QR.jpg";
 
-
 export default function CheckoutPage() {
-  const { items, total, clear } = useCart();   // ✅ ดึง clear มาด้วย
+  const { items, total, clear } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  // นับถอยหลัง 15:00
   const [sec, setSec] = useState(15 * 60);
   useEffect(() => {
     const t = setInterval(() => setSec((s) => (s > 0 ? s - 1 : 0)), 1000);
     return () => clearInterval(t);
   }, []);
+
   const mmss = useMemo(() => {
     const m = String(Math.floor(sec / 60)).padStart(2, "0");
     const s = String(sec % 60).padStart(2, "0");
@@ -29,8 +30,34 @@ export default function CheckoutPage() {
   const grand = total + shipping;
 
   const onPaymentCompleted = async () => {
-    await clear();               // ✅ เคลียร์ก่อน
-    navigate("/purchases");      // ไปหน้าประวัติสั่งซื้อ
+    try {
+      const key = user?._id ? `purchases:${user._id}` : "purchases:guest";
+      const prev = JSON.parse(localStorage.getItem(key) || "[]");
+
+      const order = {
+        id: `odr_${Date.now()}`,
+        ts: new Date().toISOString(),
+        lines: items.map(it => ({
+          key: it.key,
+          name: it.name,
+          price: it.price,
+          qty: it.qty,
+          img: it.img || "",
+          meta: it.meta || {},
+        })),
+        total,
+        shipping,
+        grand,
+        status: "To be received",
+      };
+
+      localStorage.setItem(key, JSON.stringify([order, ...prev]));
+    } catch (e) {
+      console.error("save purchases failed:", e);
+    }
+
+    await clear();
+    navigate("/purchases");
   };
 
   return (
@@ -38,7 +65,13 @@ export default function CheckoutPage() {
       <Topbar />
       <SearchBar />
 
-      <Container maxWidth="lg" sx={{ py: 3, flex: 1, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 380px" }, gap: 3 }}>
+      <Container maxWidth="lg" sx={{
+        py: 3,
+        flex: 1,
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", md: "1fr 380px" },
+        gap: 3,
+      }}>
         {/* ซ้าย: QR + ปุ่ม */}
         <Box sx={{ bgcolor: "#fff176", borderRadius: 4, p: 3 }}>
           <Typography variant="h5" fontWeight={700} mb={2}>
@@ -49,28 +82,21 @@ export default function CheckoutPage() {
             {mmss}
           </Typography>
 
-          <Box
-            sx={{
-              mx: "auto",
-              width: { xs: 280, md: 360 },
-              height: { xs: 280, md: 360 },
-              borderRadius: 3,
-              bgcolor: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "inset 0 0 0 10px rgba(0,0,0,.06)",
-            }}
-          >
+          <Box sx={{
+            mx: "auto",
+            width: { xs: 280, md: 360 },
+            height: { xs: 280, md: 360 },
+            borderRadius: 3,
+            bgcolor: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "inset 0 0 0 10px rgba(0,0,0,.06)",
+          }}>
             <img
               src={qrcode}
               alt="QR Code"
-              style={{
-                width: "75%",
-                height: "75%",
-                objectFit: "contain",
-                borderRadius: 12
-              }}
+              style={{ width: "75%", height: "75%", objectFit: "contain", borderRadius: 12 }}
               onError={(e) => (e.currentTarget.src = "/placeholder.png")}
             />
           </Box>
@@ -110,10 +136,11 @@ export default function CheckoutPage() {
               <Box sx={{ flex: 1 }}>
                 <Typography fontWeight={700}>{it.name}</Typography>
                 <Typography sx={{ fontSize: 12 }}>
-                  {it.meta?.base} • {it.meta?.size}
+                  {it.meta?.base} {it.meta?.size ? `• ${it.meta.size}` : ""}
                 </Typography>
                 <Typography sx={{ fontSize: 12 }}>{it.price.toLocaleString()} ฿</Typography>
               </Box>
+              <Typography sx={{ fontWeight: 700 }}>x{it.qty}</Typography>
             </Box>
           ))}
 

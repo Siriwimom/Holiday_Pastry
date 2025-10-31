@@ -13,14 +13,13 @@ export async function loginApi({ email, password }) {
   return data; // { user, token }
 }
 
-// เช็คอีเมลมีอยู่หรือไม่
 export async function checkEmailApi(email) {
   const { data } = await api.post("/auth/check-email", { email });
-  return data; // { ok:true, exists:boolean, ... }
+  return data; // { ok, exists, email?, id? }
 }
 
-// รีเซ็ตรหัสผ่าน
-export async function resetPasswordApi({ email, newPassword }) {
+export async function resetPasswordApi(email, newPassword) {
   const { data } = await api.post("/auth/reset-password", { email, newPassword });
-  return data; // { ok:true, message:"Password updated successfully" }
+  return data; // { ok, message }
 }
+
