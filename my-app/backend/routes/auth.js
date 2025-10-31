@@ -53,21 +53,29 @@ router.post("/check-email", async (req, res) => {
 // ===== NEW: รีเซ็ตรหัสผ่าน =====
 router.post("/reset-password", async (req, res) => {
   try {
+    console.log("RESET body:", req.body); // ← ดูจริงว่ามาอะไร
+
     const email = (req.body?.email || "").trim().toLowerCase();
-    const pwd = (req.body?.newPassword ?? req.body?.password)?.toString();
-    if (!email || !pwd) return res.status(400).json({ message: "Email and newPassword are required" });
+    // รองรับทั้ง newPassword และ password (กันตกหล่น)
+    const pwd = (req.body?.newPassword ?? req.body?.password)?.toString() || "";
+
+    if (!email || !pwd) {
+      return res.status(400).json({ message: "Email and newPassword are required" });
+    }
 
     const u = await User.findOne({ email });
-    if (!u) return res.status(404).json({ message: "Email not found" });
+    if (!u) return res.status(404).json({ message: "User not found" });
 
     u.passwordHash = await bcrypt.hash(pwd, 10);
     await u.save();
-    return res.json({ ok: true, message: "Password updated successfully" });
+    return res.json({ ok: true, message: "Password reset successful" });
   } catch (e) {
     console.error("reset-password error:", e);
     res.status(500).json({ message: "reset password failed" });
   }
 });
+
+
 router.post("/register", async (req, res) => {
   try {
     const name = req.body?.name || "";
