@@ -47,7 +47,7 @@ export default function App() {
     <React.StrictMode>
       <AuthProvider>
         <CartProvider>
-          <BrowserRouter basename="/holiday_pastry"></BrowserRouter>
+          <BrowserRouter basename="/Holiday_Pastry"></BrowserRouter>
           <BrowserRouter>
             <Routes>
               {/* ✅ หน้า public */}
