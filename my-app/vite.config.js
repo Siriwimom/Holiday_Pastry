@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  base: "/holiday_pastry/",
+  base: "/Holiday_Pastry/",
   plugins: [react()],
   server: {
     proxy: {
