@@ -47,6 +47,7 @@ export default function App() {
     <React.StrictMode>
       <AuthProvider>
         <CartProvider>
+          <BrowserRouter basename="/holiday_pastry"></BrowserRouter>
           <BrowserRouter>
             <Routes>
               {/* ✅ หน้า public */}
@@ -142,6 +143,7 @@ export default function App() {
 
               {/* ✅ default redirect */}
               <Route path="*" element={<Navigate to="/home" replace />} />
+              <BrowserRouter basename="/holiday_pastry"></BrowserRouter>
             </Routes>
           </BrowserRouter>
         </CartProvider>
