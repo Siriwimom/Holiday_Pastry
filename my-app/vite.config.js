@@ -2,11 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  base: "/holiday_pastry/",
   plugins: [react()],
   server: {
     proxy: {
       '/api': 'http://localhost:5000',
       '/uploads': 'http://localhost:5000', // ✅ เพิ่มบรรทัดนี้
+      
     },
   },
 })
