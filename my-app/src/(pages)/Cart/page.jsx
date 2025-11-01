@@ -39,7 +39,7 @@ const CartPage = () => {
         {(!items || items.length === 0) ? (
           <Box>
             <Typography color="text.secondary" mb={2}>Your bag is empty.</Typography>
-            <Button variant="contained" onClick={() => navigate("/")} sx={{ bgcolor: "#ffa000", "&:hover": { bgcolor: "#ffb300" } }}>
+            <Button variant="contained" onClick={() => navigate("/home")} sx={{ bgcolor: "#ffa000", "&:hover": { bgcolor: "#ffb300" } }}>
               Go shopping
             </Button>
           </Box>
