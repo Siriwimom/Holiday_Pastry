@@ -5,9 +5,8 @@ const BASE_URL = import.meta.env.VITE_API_URL
   || "https://holiday-pastry-backend.onrender.com/api";
 
 // ✅ export แบบ named
-export const api = axios.create({
-  baseURL: BASE_URL,
-  // withCredentials: true, // เปิดถ้าใช้ cookie
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "https://holiday-pastry-backend.onrender.com/api",
 });
 
 // ✅ export ฟังก์ชันเป็น named ด้วย
@@ -18,3 +17,5 @@ export function setAuthHeaders({ token, userId } = {}) {
   if (userId) api.defaults.headers.common["x-user-id"] = userId;
   else delete api.defaults.headers.common["x-user-id"];
 }
+
+export default api;
