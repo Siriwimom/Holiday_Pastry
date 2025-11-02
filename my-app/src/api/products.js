@@ -1,4 +1,4 @@
-import api  from "../lib/api";  // ✅ ใช้อันเดียวจาก lib/api.js
+import { api }  from "../lib/api";  // ✅ ใช้อันเดียวจาก lib/api.js
 // GET all
 export async function listProducts() {
   const { data } = await api.get("/products");
