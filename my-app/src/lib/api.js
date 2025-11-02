@@ -1,10 +1,12 @@
 // src/lib/api.js
 import axios from "axios";
 
-
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://holiday-pastry-backend.onrender.com/api";
 
 export const api = axios.create({
-  baseURL: "http://localhost:5000/api", // 👈 แก้ตรงนี้
+  baseURL: BASE_URL,
   withCredentials: true,
 });
 
@@ -33,11 +35,12 @@ api.interceptors.request.use(
 );
 
 // เผื่อหน้าอื่นเรียกตั้ง header เอง
-export const setAuthHeaders = ({ token, userId }) => {
-  api.defaults.headers.common["Authorization"] = token
-    ? `Bearer ${token}`
-    : "";
+export function setAuthHeaders({ token, userId } = {}) {
+  if (token) api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  else delete api.defaults.headers.common["Authorization"];
+
   if (userId) api.defaults.headers.common["x-user-id"] = userId;
-};
+  else delete api.defaults.headers.common["x-user-id"];
+}
 
 export default api;
