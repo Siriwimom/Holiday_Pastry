@@ -64,6 +64,8 @@ const LoginPage = () => {
       setAuthHeaders({ token, userId: user?._id });
       localStorage.setItem("auth:user", JSON.stringify(user));
       localStorage.setItem("auth:token", token || "");
++     localStorage.setItem("token", token || "");          // ✅ เพิ่มคีย์นี้ไว้ด้วย
++     localStorage.setItem("user", JSON.stringify(user));  // (เผื่อ interceptor อีกแบบ)
 
       nav(user.role === "admin" ? "/admin" : "/home");
     } catch (e) {
