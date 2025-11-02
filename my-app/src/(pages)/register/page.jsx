@@ -24,7 +24,7 @@ const RegisterPage = () => {
       if (!res?.ok) throw new Error(res?.message || "Register failed");
 
       setUser(res.user);
-      nav("/home");
+      nav("/");
     } catch (err) {
       setSb({ open: true, type: "error", msg: err?.response?.data?.message || err.message });
     }
