@@ -2,9 +2,11 @@
 import axios from "axios";
 
 // ชี้ไป backend ของโปรเจกต์
-export const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+// แบบง่าย (แก้ค่าคงที่)
+const api = axios.create({
+  baseURL: "https://holiday-pastry-backend.onrender.com/api",
 });
+
 
 // แนบ/ล้างเฮดเดอร์ auth ให้ทุก request ที่ยิงผ่าน api instance นี้
 export function setAuthHeaders({ token, userId }) {
