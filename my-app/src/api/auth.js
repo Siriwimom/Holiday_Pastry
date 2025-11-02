@@ -13,13 +13,9 @@ export async function loginApi({ email, password }) {
   return data; // { user, token }
 }
 
-export async function checkEmailApi(email) {
-  const { data } = await api.post("/auth/check-email", { email });
-  return data; // { ok, exists, email?, id? }
-}
+export const checkEmailApi = (email) =>
+  api.post("/auth/check-email", { email }).then(r => r.data);
 
-export async function resetPasswordApi(email, newPassword) {
-  const { data } = await api.post("/auth/reset-password", { email, newPassword });
-  return data; // { ok, message }
-}
+export const resetPasswordApi = (email, newPassword) =>
+  api.post("/auth/reset-password-direct", { email, newPassword }).then(r => r.data);
 
