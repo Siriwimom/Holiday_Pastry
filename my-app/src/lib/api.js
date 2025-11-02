@@ -1,16 +1,18 @@
 // src/lib/api.js
 import axios from "axios";
 
-const BASE_URL = import.meta.env.VITE_API_URL
-  || "https://holiday-pastry-backend.onrender.com/api";
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://holiday-pastry-backend.onrender.com/api";
 
-// ✅ export แบบ named
+// ประกาศ instance เดียว
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://holiday-pastry-backend.onrender.com/api",
+  baseURL: BASE_URL,
+  // withCredentials: true, // ถ้าใช้ cookie ค่อยเปิด
 });
 
-// ✅ export ฟังก์ชันเป็น named ด้วย
-export function setAuthHeaders({ token, userId } = {}) {
+// helper แนบ header
+function setAuthHeaders({ token, userId } = {}) {
   if (token) api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   else delete api.defaults.headers.common["Authorization"];
 
@@ -18,4 +20,6 @@ export function setAuthHeaders({ token, userId } = {}) {
   else delete api.defaults.headers.common["x-user-id"];
 }
 
-export default api;
+// ✅ export ให้ครบทั้งสองแบบ
+export { api, setAuthHeaders };   // <-- named export (รองรับ: import { api } from "../lib/api")
+export default api;               // <-- default export (รองรับ: import api from "../lib/api")
