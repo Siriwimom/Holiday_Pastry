@@ -2,10 +2,11 @@
 import axios from "axios";
 
 export const cartApi = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    "https://holiday-pastry-backend.onrender.com/api",
 });
 
-// ให้เรียกทุกครั้งหลัง login/logout หรือเมื่อ token/user เปลี่ยน
 export function attachAuthToCartApi({ token, userId }) {
   cartApi.defaults.headers.common["Authorization"] = token ? `Bearer ${token}` : "";
   cartApi.defaults.headers.common["x-user-id"] = userId || "";
@@ -14,7 +15,6 @@ export function attachAuthToCartApi({ token, userId }) {
 // ดึงตะกร้า
 export async function fetchCart() {
   const { data } = await cartApi.get("/cart");
-  // คาดหวัง { items: [...] }
   return data || { items: [] };
 }
 
