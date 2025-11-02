@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import { AuthProvider } from "./state/auth.jsx";
 import { CartProvider } from "./state/cart.jsx";
-import { setAuthHeaders } from "./lib/api"; // ✅ boot headers
+import { setAuthHeaders } from "./lib/api";
 
 import LoginPage from "./(pages)/Login/page.jsx";
 import RegisterPage from "./(pages)/register/page.jsx";
@@ -17,16 +17,16 @@ import CheckoutPage from "./(pages)/Checkout/page.jsx";
 import PurchasesPage from "./(pages)/Purchases/page.jsx";
 import AdminPage from "./(pages)/Admin_Page/page.jsx";
 import ProductAdmin from "./(pages)/Admin_Page/ProductAdmin.jsx";
-import UserProfilePage from "./(pages)/Userprofile/page.jsx"; // ✅ เพิ่มหน้าโปรไฟล์
+import UserProfilePage from "./(pages)/Userprofile/page.jsx";
 
-// ✅ ส่วนตรวจสอบสิทธิ์ admin
+// ✅ Guard: admin only
 function RequireAdmin({ children }) {
   const user = JSON.parse(localStorage.getItem("auth:user") || "null");
   if (!user || user.role !== "admin") return <Navigate to="/home" replace />;
   return children;
 }
 
-// ✅ ส่วนตรวจสอบว่าต้อง login ก่อนถึงจะเข้าได้
+// ✅ Guard: must be logged in
 function RequireAuth({ children }) {
   const token = localStorage.getItem("auth:token");
   if (!token) return <Navigate to="/" replace />;
@@ -34,7 +34,6 @@ function RequireAuth({ children }) {
 }
 
 export default function App() {
-  // ✅ boot headers ครั้งเดียวตอนเปิดเว็บ
   useEffect(() => {
     try {
       const u = JSON.parse(localStorage.getItem("auth:user") || "null");
@@ -43,104 +42,36 @@ export default function App() {
     } catch {}
   }, []);
 
+  // ✅ ใช้ค่า BASE_URL จาก Vite เพื่อลดโอกาสพิมพ์ผิด (ควรได้ '/Holiday_Pastry/')
+  const base = (import.meta.env.BASE_URL || "/").replace(/\/$/, ""); // => '/Holiday_Pastry'
+
   return (
     <React.StrictMode>
       <AuthProvider>
         <CartProvider>
-          <BrowserRouter>
+          {/* ⬇️ มี BrowserRouter เดียว และอยู่นอก <Routes> */}
+          <BrowserRouter basename={base}>
             <Routes>
-              {/* ✅ หน้า public */}
+              {/* Public */}
               <Route path="/" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgetpassword" element={<ResetPasswordPage />} />
 
-              {/* ✅ หน้า user */}
-              <Route
-                path="/home"
-                element={
-                  <RequireAuth>
-                    <HomePage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/product/:id"
-                element={
-                  <RequireAuth>
-                    <ProductPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/search"
-                element={
-                  <RequireAuth>
-                    <SearchPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/cart"
-                element={
-                  <RequireAuth>
-                    <CartPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/checkout"
-                element={
-                  <RequireAuth>
-                    <CheckoutPage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/purchases"
-                element={
-                  <RequireAuth>
-                    <PurchasesPage />
-                  </RequireAuth>
-                }
-              />
+              {/* User */}
+              <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />
+              <Route path="/product/:id" element={<RequireAuth><ProductPage /></RequireAuth>} />
+              <Route path="/search" element={<RequireAuth><SearchPage /></RequireAuth>} />
+              <Route path="/cart" element={<RequireAuth><CartPage /></RequireAuth>} />
+              <Route path="/checkout" element={<RequireAuth><CheckoutPage /></RequireAuth>} />
+              <Route path="/purchases" element={<RequireAuth><PurchasesPage /></RequireAuth>} />
+              <Route path="/user" element={<RequireAuth><UserProfilePage /></RequireAuth>} />
 
-              {/* ✅ หน้าโปรไฟล์ผู้ใช้ */}
-              <Route
-                path="/user"
-                element={
-                  <RequireAuth>
-                    <UserProfilePage />
-                  </RequireAuth>
-                }
-              />
+              {/* Admin */}
+              <Route path="/admin" element={<RequireAdmin><AdminPage /></RequireAdmin>} />
+              <Route path="/admin/product/new" element={<RequireAdmin><ProductAdmin /></RequireAdmin>} />
+              <Route path="/admin/product/:id" element={<RequireAdmin><ProductAdmin /></RequireAdmin>} />
 
-              {/* ✅ หน้าแอดมิน */}
-              <Route
-                path="/admin"
-                element={
-                  <RequireAdmin>
-                    <AdminPage />
-                  </RequireAdmin>
-                }
-              />
-              <Route
-                path="/admin/product/new"
-                element={
-                  <RequireAdmin>
-                    <ProductAdmin />
-                  </RequireAdmin>
-                }
-              />
-              <Route
-                path="/admin/product/:id"
-                element={
-                  <RequireAdmin>
-                    <ProductAdmin />
-                  </RequireAdmin>
-                }
-              />
-
-              {/* ✅ default redirect */}
+              {/* Fallback */}
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </BrowserRouter>

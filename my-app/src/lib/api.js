@@ -1,23 +1,25 @@
 // src/lib/api.js
 import axios from "axios";
 
-// ชี้ไป backend ของโปรเจกต์
-export const api = axios.create({
-  baseURL: "http://localhost:5000/api",
+const BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  "https://holiday-pastry-backend.onrender.com/api";
+
+// ประกาศ instance เดียว
+const api = axios.create({
+  baseURL: BASE_URL,
+  // withCredentials: true, // ถ้าใช้ cookie ค่อยเปิด
 });
 
-// แนบ/ล้างเฮดเดอร์ auth ให้ทุก request ที่ยิงผ่าน api instance นี้
-export function setAuthHeaders({ token, userId }) {
-  // Authorization
-  if (token) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-  } else {
-    delete api.defaults.headers.common["Authorization"];
-  }
-  // x-user-id (สำหรับ route ที่คุณทำ requireAuth แบบอ่าน x-user-id ก็ได้)
-  if (userId) {
-    api.defaults.headers.common["x-user-id"] = userId;
-  } else {
-    delete api.defaults.headers.common["x-user-id"];
-  }
+// helper แนบ header
+function setAuthHeaders({ token, userId } = {}) {
+  if (token) api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  else delete api.defaults.headers.common["Authorization"];
+
+  if (userId) api.defaults.headers.common["x-user-id"] = userId;
+  else delete api.defaults.headers.common["x-user-id"];
 }
+
+// ✅ export ให้ครบทั้งสองแบบ
+export { api, setAuthHeaders };   // <-- named export (รองรับ: import { api } from "../lib/api")
+export default api;               // <-- default export (รองรับ: import api from "../lib/api")

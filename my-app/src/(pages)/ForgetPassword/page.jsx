@@ -18,42 +18,42 @@ const ResetPasswordPage = () => {
   const openSb = (type, msg) => setSb({ open: true, type, msg });
 
   const doCheck = async () => {
-    const e = email.trim().toLowerCase();
-    if (!e) return openSb("error", "Please enter your email address");
-    try {
-      const res = await checkEmailApi(e);
-      const found = !!(res?.ok && (res?.exists === true || !!res?.email));
-      if (found) {
-        openSb("success", `Email found: ${res?.email || e}. Please set a new password.`);
-        setStep("password");
-      } else {
-        openSb("error", "Email not found");
-      }
-    } catch (err) {
-      console.error(err);
-      openSb("error", err?.response?.data?.message || "Check email failed");
+  const e = email.trim().toLowerCase();
+  if (!e) return openSb("error", "Please enter your email address");
+  try {
+    const res = await checkEmailApi(e); // -> { ok, exists, email }
+    const found = !!res?.exists;
+    if (found) {
+      openSb("success", `Email found: ${res?.email || e}. Please set a new password.`);
+      setStep("password");
+    } else {
+      openSb("error", "Email not found");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    openSb("error", err?.response?.data?.message || "Check email failed");
+  }
+};
+const doReset = async () => {
+  const e = email.trim().toLowerCase();
+  if (!e) return openSb("error", "Email is required");
+  if (!pw) return openSb("error", "Please enter a new password");
+  if (pw !== pw2) return openSb("error", "Passwords do not match");
 
-  const doReset = async () => {
-    const e = email.trim().toLowerCase();
-    if (!e) return openSb("error", "Email is required");
-    if (!pw) return openSb("error", "Please enter a new password");
-    if (pw !== pw2) return openSb("error", "Passwords do not match");
-
-    try {
-      const res = await resetPasswordApi(e, pw); // ← ส่ง newPassword แน่ ๆ
-      if (res?.ok) {
-        openSb("success", res?.message || "Password reset successful");
-        setTimeout(() => nav("/login"), 900);
-      } else {
-        openSb("error", res?.message || "Reset failed");
-      }
-    } catch (err) {
-      console.error(err);
-      openSb("error", err?.response?.data?.message || "Reset failed");
+  try {
+    const res = await resetPasswordApi(e, pw); // ส่ง {email, newPassword}
+    if (res?.ok) {
+      openSb("success", res?.message || "Password reset successful");
+      setTimeout(() => nav("/login"), 900);
+    } else {
+      openSb("error", res?.message || "Reset failed");
     }
-  };
+  } catch (err) {
+    console.error(err);
+    openSb("error", err?.response?.data?.message || "Reset failed");
+  }
+};
+
 
   return (
     <Box sx={{ minHeight: "100vh", width: "100vw", display: "flex", flexDirection: "column",
