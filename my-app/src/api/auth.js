@@ -1,11 +1,10 @@
 // src/api/auth.js
-import { api } from "./base";
+import { api } from "../lib/api";
 
 // สมัครสมาชิก
-export async function registerApi({ name, email, password }) {
-  const { data } = await api.post("/auth/register", { name, email, password });
-  return data; // { ok: true, user: {...} }
-}
+
+export const registerApi = (data) =>
+  api.post("/auth/register", data).then((r) => r.data);
 
 // ล็อกอิน
 export async function loginApi({ email, password }) {

@@ -20,7 +20,7 @@ const RegisterPage = () => {
     try {
       if (!email || !pw) throw new Error("Email/Password required");
       if (pw !== pw2) throw new Error("Password not match");
-      const res = await registerApi({ name, email, password: pw });
+      const res = await registerApi({ username: name, email, password: pw });
       if (!res?.ok) throw new Error(res?.message || "Register failed");
 
       setUser(res.user);
